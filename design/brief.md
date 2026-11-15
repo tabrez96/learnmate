@@ -47,3 +47,7 @@ Not a priority while private. If opened up: a family subscription (roughly 5-10 
 
 ## Runner-up ideas
 Not applicable: this is the owner's own idea, so no alternatives were researched.
+
+## Added since approval
+- Monthly AI spending cap: Telegram alert to the parent at 80%, and new lessons stop with a clear message when the cap is reached (added 2026-11-15)
+
