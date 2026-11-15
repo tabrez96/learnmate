@@ -1,4 +1,5 @@
 <!-- about -->
+
 # Learnmate
 
 **A parent-supervised daily study mentor that teaches from your school syllabus and reports every test**
@@ -62,11 +63,63 @@ Manage appearance, Telegram, the PIN and fallback password, subjects and their m
 Lock the session after 5 minutes with no activity, until a parent unlocks it with the session PIN
 
 ![S11 Session locked](design/screens/S11-session-locked/screen.png)
+
 <!-- /about -->
 
 ## Development
 
-TODO: build and test instructions, added with the first code.
+### Server (`server/`)
+
+Needs Python 3.14.
+
+```sh
+cd server
+python3.14 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
+uvicorn learnmate.main:create_app --factory --reload   # run
+pytest                                                  # test
+ruff format . && ruff check --fix .                     # format
+ruff format --check . && ruff check .                   # check
+```
+
+Settings come from the environment:
+
+| Variable                 | Meaning                               | Default                     |
+| ------------------------ | ------------------------------------- | --------------------------- |
+| `DATA_DIR`               | Where the database and files are kept | `data`                      |
+| `DEVICE_TOKEN`           | Token the app sends on every request  | empty                       |
+| `MODEL_MAIN`             | Model for lessons, answers and tests  | `claude-sonnet-5-5`         |
+| `MODEL_FAST`             | Model for page reading and rewriting  | `claude-haiku-4-5-20251001` |
+| `EMBED_MODEL`            | Embedding model                       | `BAAI/bge-small-en-v1.5`    |
+| `RERANK_ENABLED`         | Turn on result re-ranking             | `false`                     |
+| `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap               | `10`                        |
+
+Every product default in `server/learnmate/config.py` (PIN rules, lockouts, inactivity limits, grade bands) can be overridden by its upper-cased name, e.g. `PIN_LENGTH=6`.
+
+### Android (`android/`)
+
+Needs JDK 17 and the Android SDK.
+
+```sh
+cd android
+./gradlew assembleDebug                 # build
+./gradlew testDebugUnitTest             # test
+./gradlew ktlintFormat                  # format
+./gradlew ktlintCheck                   # check
+./gradlew recordRoborazziDebug          # record screenshots
+./gradlew verifyRoborazziDebug          # verify screenshots
+```
+
+### Docs (repo root)
+
+```sh
+npm install
+npx prettier --write .   # format
+npx prettier --check .   # check
+```
+
+### CI
+
+GitHub Actions runs three jobs on every pull request: `server`, `android` and `prettier`.
 
 ---
 
