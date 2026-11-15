@@ -1,2 +1,17 @@
 .dmi/
 design/**/*.html
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+data/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+.idea/
+*.iml
+.env

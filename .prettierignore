@@ -1,0 +1,10 @@
+# Owned by the designer
+design/
+# Formatted by ktlint and ruff
+android/
+server/
+# Generated or managed outside tickets
+package-lock.json
+node_modules/
+.dmi/
+CLAUDE.md
