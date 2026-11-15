@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80" role="img" aria-label="Learnmate">
+  <defs>
+    <linearGradient id="lm-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3949C8"/>
+      <stop offset="1" stop-color="#5C6BE0"/>
+    </linearGradient>
+    <linearGradient id="lm-word" gradientUnits="userSpaceOnUse" x1="186" y1="0" x2="300" y2="0">
+      <stop offset="0" stop-color="#3949C8"/>
+      <stop offset="1" stop-color="#5C6BE0"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(8 8)">
+    <rect width="64" height="64" rx="16" fill="url(#lm-bg)"/>
+    <path d="M31 19.5C25 16 18 15 10 16.5V51L18 43.2C23.5 42.8 27.5 44 31 46.5Z" fill="#FFFFFF"/>
+    <path d="M33 19.5C39 16 46 15 54 16.5V43C46 41.5 39 42.5 33 46.5Z" fill="#FFFFFF"/>
+    <path d="M37.5 31.5l4.2 4.2 7.6-8.8" fill="none" stroke="#F2A516" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="88" y="53" font-family="-apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#1E2640" letter-spacing="-0.8">Learn<tspan fill="url(#lm-word)">mate</tspan></text>
+</svg>
