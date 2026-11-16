@@ -92,6 +92,8 @@ Settings come from the environment:
 | `DEVICE_TOKEN`           | Token the app sends on every request  | empty                       |
 | `MODEL_MAIN`             | Model for lessons, answers and tests  | `claude-sonnet-5-5`         |
 | `MODEL_FAST`             | Model for page reading and rewriting  | `claude-haiku-4-5-20251001` |
+| `ANTHROPIC_API_KEY`      | Key for the AI provider               | empty                       |
+| `LLM_PROVIDER`           | `fake` only; `anthropic` is planned   | `fake`                      |
 | `EMBED_MODEL`            | Embedding model                       | `BAAI/bge-small-en-v1.5`    |
 | `RERANK_ENABLED`         | Turn on result re-ranking             | `false`                     |
 | `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap               | `10`                        |
