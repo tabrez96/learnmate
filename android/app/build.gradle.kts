@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.androidx.datastore.preferences)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
     debugImplementation(libs.play.services.auth)
@@ -78,6 +79,7 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit4)
     // The vintage engine runs the JUnit 4 Robolectric tests on the JUnit 5 platform.
     testRuntimeOnly(libs.junit.platform.launcher)

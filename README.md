@@ -114,6 +114,8 @@ cd android
 ./gradlew verifyRoborazziDebug          # verify screenshots
 ```
 
+Screenshots are stored in `app/src/test/screenshots`.
+
 #### Classroom check (debug builds only)
 
 A debug-only screen that checks whether a Google account can grant read-only Classroom and Drive access. Add your Android OAuth client id to `android/local.properties`:
