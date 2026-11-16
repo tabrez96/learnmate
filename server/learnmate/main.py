@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
 from learnmate.db import create_db_engine, make_session_factory
 
@@ -11,7 +12,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Learnmate")
     app.state.settings = settings
     app.state.engine = engine
-    app.state.session_factory = make_session_factory(engine)
+    clock = SystemClock()
+    app.state.clock = clock
+    app.state.session_factory = make_session_factory(engine, clock)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:

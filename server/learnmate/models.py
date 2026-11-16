@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
     true,
 )
@@ -27,8 +28,42 @@ def _cascade_fk(target: str, *, index: bool = True) -> Any:
     return mapped_column(ForeignKey(target, ondelete="CASCADE"), index=index)
 
 
-def _created_at() -> Mapped[dt.datetime]:
-    return mapped_column(DateTime, server_default=func.current_timestamp())
+def _cascade_pk(target: str) -> Any:
+    return mapped_column(ForeignKey(target, ondelete="CASCADE"), primary_key=True)
+
+
+def _clock_stamp() -> Mapped[dt.datetime]:
+    # Filled from the injected clock on insert (see db.py); the server default
+    # is the fallback for raw SQL.
+    return mapped_column(
+        DateTime, server_default=func.current_timestamp(), info={"clock": True}
+    )
+
+
+SESSION_TYPES = ("learn", "recap", "test_only")
+SESSION_STATES = ("set_up", "running", "locked", "ended", "force_ended", "cancelled")
+END_REASONS = ("pin", "fallback")
+SESSION_EVENT_TYPES = (
+    "started",
+    "left",
+    "back",
+    "heartbeat_lost",
+    "warned",
+    "locked",
+    "unlocked",
+    "wrong_pin",
+    "pin_locked",
+    "pin_resent",
+    "pin_replaced",
+    "fallback_wrong",
+    "ended",
+)
+MESSAGE_ROLES = ("mentor", "student")
+
+
+def _one_of(column: str, values: tuple[str, ...], name: str) -> CheckConstraint:
+    allowed = ", ".join(f"'{v}'" for v in values)
+    return CheckConstraint(f"{column} IN ({allowed})", name=name)
 
 
 class Family(Base):
@@ -45,7 +80,7 @@ class Family(Base):
     outside_books_allowed: Mapped[bool] = mapped_column(server_default=true())
     inactivity_warn_s: Mapped[int] = mapped_column(server_default="240")
     inactivity_lock_s: Mapped[int] = mapped_column(server_default="300")
-    created_at: Mapped[dt.datetime] = _created_at()
+    created_at: Mapped[dt.datetime] = _clock_stamp()
 
 
 class Subject(Base):
@@ -54,7 +89,7 @@ class Subject(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     icon: Mapped[str] = mapped_column(String(50))
-    created_at: Mapped[dt.datetime] = _created_at()
+    created_at: Mapped[dt.datetime] = _clock_stamp()
 
 
 class Material(Base):
@@ -76,7 +111,7 @@ class Material(Base):
     pages_total: Mapped[int | None]
     pages_read: Mapped[int] = mapped_column(server_default="0")
     chapters_hint: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[dt.datetime] = _created_at()
+    created_at: Mapped[dt.datetime] = _clock_stamp()
 
 
 class MaterialFile(Base):
@@ -139,3 +174,85 @@ class Exam(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     subject_id: Mapped[int] = _cascade_fk("subject.id")
     date: Mapped[dt.date] = mapped_column(Date)
+
+
+class StudySession(Base):
+    __tablename__ = "session"
+    __table_args__ = (
+        _one_of("type", SESSION_TYPES, "ck_session_type"),
+        _one_of("state", SESSION_STATES, "ck_session_state"),
+        _one_of("end_reason", END_REASONS, "ck_session_end_reason"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # SET NULL: deleting a subject keeps its sessions, tests and grades.
+    subject_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject.id", ondelete="SET NULL"), index=True
+    )
+    type: Mapped[str] = mapped_column(String(16))
+    question_count: Mapped[int]
+    state: Mapped[str] = mapped_column(String(16), server_default="set_up")
+    pin_hash: Mapped[str | None] = mapped_column(String(255))
+    # Encrypted with the server's PIN key, for "Forgot the PIN".
+    pin_enc: Mapped[str | None] = mapped_column(Text)
+    pin_version: Mapped[int] = mapped_column(server_default="1")
+    pin_last_sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+    wrong_pins: Mapped[int] = mapped_column(server_default="0")
+    pin_locked_until: Mapped[dt.datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[dt.datetime] = _clock_stamp()
+    started_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+    ended_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+    end_reason: Mapped[str | None] = mapped_column(String(16))
+    study_seconds: Mapped[int] = mapped_column(server_default="0")
+    # Plan steps and their status.
+    plan_json: Mapped[str | None] = mapped_column(Text)
+
+
+class SessionMaterial(Base):
+    __tablename__ = "session_material"
+
+    session_id: Mapped[int] = _cascade_pk("session.id")
+    material_id: Mapped[int] = _cascade_pk("material.id")
+
+
+class SessionChapter(Base):
+    __tablename__ = "session_chapter"
+
+    session_id: Mapped[int] = _cascade_pk("session.id")
+    chapter_id: Mapped[int] = _cascade_pk("chapter.id")
+
+
+class SessionEvent(Base):
+    __tablename__ = "session_event"
+    __table_args__ = (_one_of("type", SESSION_EVENT_TYPES, "ck_session_event_type"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = _cascade_fk("session.id")
+    type: Mapped[str] = mapped_column(String(16))
+    at: Mapped[dt.datetime] = _clock_stamp()
+    data_json: Mapped[str | None] = mapped_column(Text)
+
+
+class Heartbeat(Base):
+    __tablename__ = "heartbeat"
+
+    session_id: Mapped[int] = _cascade_pk("session.id")
+    last_at: Mapped[dt.datetime] = _clock_stamp()
+
+
+class Message(Base):
+    __tablename__ = "message"
+    __table_args__ = (_one_of("role", MESSAGE_ROLES, "ck_message_role"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = _cascade_fk("session.id")
+    role: Mapped[str] = mapped_column(String(16))
+    text: Mapped[str] = mapped_column(Text)
+    # Chunk ids, material title, chapter, page.
+    sources_json: Mapped[str | None] = mapped_column(Text)
+    visual_json: Mapped[str | None] = mapped_column(Text)
+    outside: Mapped[bool] = mapped_column(server_default=false())
+    outside_source_url: Mapped[str | None] = mapped_column(Text)
+    # Query used, chunk ids and scores, rerank on or off; for spot checks.
+    retrieval_json: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = _clock_stamp()
