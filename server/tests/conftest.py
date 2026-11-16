@@ -1,3 +1,4 @@
+import datetime as dt
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -8,9 +9,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+from learnmate.clock import FakeClock
 from learnmate.config import Settings
 from learnmate.db import create_db_engine, make_session_factory
 from learnmate.main import create_app
+from learnmate.models import StudySession, Subject
 
 SERVER_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,6 +45,22 @@ def engine(alembic_config: Config) -> Iterator[Engine]:
 
 
 @pytest.fixture
-def db(engine: Engine) -> Iterator[Session]:
-    with make_session_factory(engine)() as session:
+def clock() -> FakeClock:
+    return FakeClock(dt.datetime(2026, 1, 5, 9, 0))
+
+
+@pytest.fixture
+def db(engine: Engine, clock: FakeClock) -> Iterator[Session]:
+    with make_session_factory(engine, clock)() as session:
         yield session
+
+
+@pytest.fixture
+def study_session(db: Session) -> StudySession:
+    subject = Subject(name="Science", icon="flask")
+    db.add(subject)
+    db.flush()
+    row = StudySession(subject_id=subject.id, type="learn", question_count=5)
+    db.add(row)
+    db.flush()
+    return row
