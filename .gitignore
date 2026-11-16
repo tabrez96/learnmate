@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+.pytmp/
 .ruff_cache/
 *.egg-info/
 /server/data/

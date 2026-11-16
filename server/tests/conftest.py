@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -33,8 +34,20 @@ def settings(tmp_path: Path) -> Settings:
 
 
 @pytest.fixture
-def client(settings: Settings) -> Iterator[TestClient]:
-    with TestClient(create_app(settings)) as c:
+def app(settings: Settings) -> Iterator[FastAPI]:
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    cfg = Config(str(SERVER_DIR / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    command.upgrade(cfg, "head")
+    application = create_app(settings)
+    yield application
+    application.state.engine.dispose()
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    headers = {"Authorization": "Bearer test-device-token"}
+    with TestClient(app, headers=headers) as c:
         yield c
 
 

@@ -78,6 +78,7 @@ python3.14 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 alembic upgrade head                                    # migrate
 uvicorn learnmate.main:create_app --factory --reload   # run
 pytest                                                  # test
+# API calls need the header `Authorization: Bearer <DEVICE_TOKEN>` (only `/api/v1/health` is open)
 ruff format . && ruff check --fix .                     # format
 ruff format --check . && ruff check .                   # check
 ```
