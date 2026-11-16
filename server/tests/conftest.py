@@ -2,10 +2,17 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
 
 from learnmate.config import Settings
+from learnmate.db import create_db_engine, make_session_factory
 from learnmate.main import create_app
+
+SERVER_DIR = Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture
@@ -17,3 +24,24 @@ def settings(tmp_path: Path) -> Settings:
 def client(settings: Settings) -> Iterator[TestClient]:
     with TestClient(create_app(settings)) as c:
         yield c
+
+
+@pytest.fixture
+def alembic_config(tmp_path: Path) -> Config:
+    cfg = Config(str(SERVER_DIR / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", f"sqlite:///{tmp_path / 'test.db'}")
+    return cfg
+
+
+@pytest.fixture
+def engine(alembic_config: Config) -> Iterator[Engine]:
+    command.upgrade(alembic_config, "head")
+    eng = create_db_engine(alembic_config.get_main_option("sqlalchemy.url"))
+    yield eng
+    eng.dispose()
+
+
+@pytest.fixture
+def db(engine: Engine) -> Iterator[Session]:
+    with make_session_factory(engine)() as session:
+        yield session

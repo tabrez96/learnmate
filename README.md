@@ -75,11 +75,14 @@ Needs Python 3.14.
 ```sh
 cd server
 python3.14 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
+alembic upgrade head                                    # migrate
 uvicorn learnmate.main:create_app --factory --reload   # run
 pytest                                                  # test
 ruff format . && ruff check --fix .                     # format
 ruff format --check . && ruff check .                   # check
 ```
+
+The database is `learnmate.db` in `DATA_DIR`.
 
 Settings come from the environment:
 
