@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,12 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.roborazzi)
 }
+
+val localProperties =
+    Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
 
 android {
     namespace = "app.learnmate"
@@ -20,6 +28,18 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    buildTypes {
+        debug {
+            // An Android OAuth client id is not a secret; it only identifies the app to Google.
+            buildConfigField(
+                "String",
+                "GOOGLE_ANDROID_CLIENT_ID",
+                "\"${localProperties.getProperty("google.androidClientId", "")}\"",
+            )
+        }
     }
 
     compileOptions {
@@ -52,6 +72,9 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
+    debugImplementation(libs.play.services.auth)
+    debugImplementation(libs.okhttp)
+    debugImplementation(libs.kotlinx.serialization.json)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
