@@ -1,6 +1,7 @@
 """Content tables. `chunk_fts` (FTS5) is not a model: the migration creates it and its triggers keep it in sync."""
 
 import datetime as dt
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
@@ -10,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     LargeBinary,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -59,6 +61,30 @@ SESSION_EVENT_TYPES = (
     "ended",
 )
 MESSAGE_ROLES = ("mentor", "student")
+TEST_KINDS = (
+    "warmup",
+    "daily",
+    "weekly",
+    "surprise",
+    "test_only",
+    "challenge",
+    "bonus",
+)
+TEST_STATUSES = ("in_progress", "done", "missed")
+GRADE_BANDS = ("A", "B", "C", "D", "E", "F")
+POINTS_REASONS = ("warmup", "quick_check", "test", "challenge", "bonus", "streak")
+OUTBOX_STATUSES = ("pending", "sent")
+LLM_PURPOSES = (
+    "read_page",
+    "chapters",
+    "rewrite",
+    "lesson",
+    "answer",
+    "outside",
+    "questions",
+    "figures",
+)
+BUDGET_LEVELS = (80, 100)
 
 
 def _one_of(column: str, values: tuple[str, ...], name: str) -> CheckConstraint:
@@ -256,3 +282,100 @@ class Message(Base):
     # Query used, chunk ids and scores, rerank on or off; for spot checks.
     retrieval_json: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = _clock_stamp()
+
+
+class StudyTest(Base):
+    __tablename__ = "test"
+    __table_args__ = (
+        _one_of("kind", TEST_KINDS, "ck_test_kind"),
+        _one_of("status", TEST_STATUSES, "ck_test_status"),
+        _one_of("band", GRADE_BANDS, "ck_test_band"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # SET NULL: tests and grades outlive their session and subject.
+    session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("session.id", ondelete="SET NULL"), index=True
+    )
+    subject_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject.id", ondelete="SET NULL"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(16))
+    status: Mapped[str] = mapped_column(String(16), server_default="in_progress")
+    # False for warm-up, challenge and bonus.
+    graded: Mapped[bool]
+    current_index: Mapped[int] = mapped_column(server_default="0")
+    score_pct: Mapped[int | None]
+    # Null until graded.
+    band: Mapped[str | None] = mapped_column(String(1))
+    created_at: Mapped[dt.datetime] = _clock_stamp()
+    finished_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+
+
+class Question(Base):
+    __tablename__ = "question"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    test_id: Mapped[int] = _cascade_fk("test.id")
+    position: Mapped[int]
+    prompt: Mapped[str] = mapped_column(Text)
+    # Four options.
+    options_json: Mapped[str] = mapped_column(Text)
+    correct_index: Mapped[int]
+    explanation: Mapped[str | None] = mapped_column(Text)
+    chunk_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chunk.id", ondelete="SET NULL"), index=True
+    )
+    answer_index: Mapped[int | None]
+    answered_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+
+
+class Points(Base):
+    __tablename__ = "points"
+    __table_args__ = (_one_of("reason", POINTS_REASONS, "ck_points_reason"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = _cascade_fk("session.id")
+    reason: Mapped[str] = mapped_column(String(16))
+    amount: Mapped[int]
+    at: Mapped[dt.datetime] = _clock_stamp()
+
+
+class Outbox(Base):
+    __tablename__ = "outbox"
+    __table_args__ = (_one_of("status", OUTBOX_STATUSES, "ck_outbox_status"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text: Mapped[str] = mapped_column(Text)
+    buttons_json: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), server_default="pending")
+    attempts: Mapped[int] = mapped_column(server_default="0")
+    # Null means send now.
+    next_try_at: Mapped[dt.datetime | None] = mapped_column(DateTime)
+
+
+class LlmUsage(Base):
+    __tablename__ = "llm_usage"
+    __table_args__ = (_one_of("purpose", LLM_PURPOSES, "ck_llm_usage_purpose"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    at: Mapped[dt.datetime] = _clock_stamp()
+    model: Mapped[str] = mapped_column(String(100))
+    purpose: Mapped[str] = mapped_column(String(16))
+    input_tokens: Mapped[int] = mapped_column(server_default="0")
+    output_tokens: Mapped[int] = mapped_column(server_default="0")
+    web_searches: Mapped[int] = mapped_column(server_default="0")
+    cost_usd: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+
+
+class BudgetAlert(Base):
+    __tablename__ = "budget_alert"
+    __table_args__ = (
+        CheckConstraint("level IN (80, 100)", name="ck_budget_alert_level"),
+        UniqueConstraint("month", "level", name="uq_budget_alert_month_level"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # YYYY-MM
+    month: Mapped[str] = mapped_column(String(7))
+    level: Mapped[int]
