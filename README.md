@@ -109,6 +109,16 @@ cd android
 ./gradlew verifyRoborazziDebug          # verify screenshots
 ```
 
+#### Classroom check (debug builds only)
+
+A debug-only screen that checks whether a Google account can grant read-only Classroom and Drive access. Add your Android OAuth client id to `android/local.properties`:
+
+```
+google.androidClientId=<your Android OAuth client id>
+```
+
+See `docs/classroom-check.md` for the procedure and results.
+
 ### Docs (repo root)
 
 ```sh
