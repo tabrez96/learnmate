@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     device_token: str = ""
 
+    @property
+    def database_url(self) -> str:
+        return f"sqlite:///{self.data_dir / 'learnmate.db'}"
+
     # AI
     model_main: str = "claude-sonnet-5-5"
     model_fast: str = "claude-haiku-4-5-20251001"
