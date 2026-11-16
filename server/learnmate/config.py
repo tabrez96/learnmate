@@ -3,6 +3,7 @@
 import itertools
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +23,8 @@ class Settings(BaseSettings):
     # AI
     model_main: str = "claude-sonnet-5-5"
     model_fast: str = "claude-haiku-4-5-20251001"
+    anthropic_api_key: str = ""
+    llm_provider: Literal["anthropic", "fake"] = "fake"
     embed_model: str = "BAAI/bge-small-en-v1.5"
     rerank_enabled: bool = False
     llm_monthly_budget_usd: float = 10.0

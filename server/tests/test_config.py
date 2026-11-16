@@ -42,6 +42,8 @@ OVERRIDES = {
     "device_token": ("abc", "abc"),
     "model_main": ("m1", "m1"),
     "model_fast": ("m2", "m2"),
+    "anthropic_api_key": ("k1", "k1"),
+    "llm_provider": ("anthropic", "anthropic"),
     "embed_model": ("e1", "e1"),
     "rerank_enabled": ("true", True),
     "llm_monthly_budget_usd": ("25", 25.0),

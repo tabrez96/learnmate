@@ -18,9 +18,18 @@ from learnmate.models import StudySession, Subject
 SERVER_DIR = Path(__file__).resolve().parent.parent
 
 
+@pytest.fixture(autouse=True)
+def _fake_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "fake")
+
+
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return Settings(data_dir=tmp_path / "data", device_token="test-device-token")
+    return Settings(
+        data_dir=tmp_path / "data",
+        device_token="test-device-token",
+        llm_provider="fake",
+    )
 
 
 @pytest.fixture
