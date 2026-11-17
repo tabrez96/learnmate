@@ -18,6 +18,7 @@ def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_defaults() -> None:
     s = Settings()
     assert s.pin_length == 4
+    assert s.llm_provider == "anthropic"
     assert s.pin_max_wrong == 5
     assert s.pin_lockout_seconds == 900
     assert s.pin_wrong_before_fallback == 3

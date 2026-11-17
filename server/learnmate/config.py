@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     model_main: str = "claude-sonnet-5-5"
     model_fast: str = "claude-haiku-4-5-20251001"
     anthropic_api_key: str = ""
-    llm_provider: Literal["anthropic", "fake"] = "fake"
+    llm_provider: Literal["anthropic", "fake"] = "anthropic"
     embed_model: str = "BAAI/bge-small-en-v1.5"
     rerank_enabled: bool = False
     llm_monthly_budget_usd: float = 10.0

@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from learnmate.config import Settings
 from learnmate.llm import make_llm
+from learnmate.llm.anthropic_llm import AnthropicLlm
 from learnmate.llm.fake import FakeLlm
 from learnmate.llm.types import (
     FAST_PURPOSES,
@@ -84,9 +85,9 @@ def test_fake_selected_in_tests(settings: Settings) -> None:
     assert isinstance(make_llm(Settings()), FakeLlm)
 
 
-def test_make_llm_anthropic_not_implemented() -> None:
-    with pytest.raises(NotImplementedError):
-        make_llm(Settings(llm_provider="anthropic"))
+def test_make_llm_anthropic() -> None:
+    llm = make_llm(Settings(llm_provider="anthropic", anthropic_api_key="test-key"))
+    assert isinstance(llm, AnthropicLlm)
 
 
 @pytest.mark.parametrize(
