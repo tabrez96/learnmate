@@ -35,6 +35,8 @@ def test_defaults() -> None:
     assert s.llm_budget_alert_fraction == 0.8
     assert s.data_dir == Path("data")
     assert s.device_token == ""
+    assert s.upload_max_mb == 50
+    assert s.upload_max_files == 20
     assert s.telegram_bot_token == ""
     assert s.telegram_poll_seconds == 2.0
     assert s.timezone == "UTC"
@@ -43,6 +45,8 @@ def test_defaults() -> None:
 OVERRIDES = {
     "data_dir": ("/tmp/x", Path("/tmp/x")),
     "device_token": ("abc", "abc"),
+    "upload_max_mb": ("5", 5),
+    "upload_max_files": ("3", 3),
     "telegram_bot_token": ("123:fake", "123:fake"),
     "telegram_poll_seconds": ("0.5", 0.5),
     "timezone": ("Asia/Kolkata", "Asia/Kolkata"),

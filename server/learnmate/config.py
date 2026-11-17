@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     device_token: str = ""
 
+    # Uploads
+    upload_max_mb: int = 50
+    upload_max_files: int = 20
+
     # Telegram
     telegram_bot_token: str = ""
     telegram_poll_seconds: float = 2.0
