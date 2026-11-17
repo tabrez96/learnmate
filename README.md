@@ -99,6 +99,8 @@ Settings come from the environment:
 | `RERANK_ENABLED`         | Turn on result re-ranking             | `false`                     |
 | `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap               | `10`                        |
 
+The Telegram bot only starts when `TELEGRAM_BOT_TOKEN` is set (messages wait in the outbox until then); tests never need it. Times in messages use `TIMEZONE` (an IANA name, default `UTC`).
+
 Every product default in `server/learnmate/config.py` (PIN rules, lockouts, inactivity limits, grade bands) can be overridden by its upper-cased name, e.g. `PIN_LENGTH=6`.
 
 ### Android (`android/`)

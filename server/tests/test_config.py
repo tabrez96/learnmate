@@ -35,11 +35,17 @@ def test_defaults() -> None:
     assert s.llm_budget_alert_fraction == 0.8
     assert s.data_dir == Path("data")
     assert s.device_token == ""
+    assert s.telegram_bot_token == ""
+    assert s.telegram_poll_seconds == 2.0
+    assert s.timezone == "UTC"
 
 
 OVERRIDES = {
     "data_dir": ("/tmp/x", Path("/tmp/x")),
     "device_token": ("abc", "abc"),
+    "telegram_bot_token": ("123:fake", "123:fake"),
+    "telegram_poll_seconds": ("0.5", 0.5),
+    "timezone": ("Asia/Kolkata", "Asia/Kolkata"),
     "model_main": ("m1", "m1"),
     "model_fast": ("m2", "m2"),
     "anthropic_api_key": ("k1", "k1"),
