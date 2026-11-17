@@ -9,6 +9,7 @@ from learnmate.config import Settings
 from learnmate.llm import make_llm
 from learnmate.llm.anthropic_llm import AnthropicLlm
 from learnmate.llm.fake import FakeLlm
+from learnmate.llm.metered import MeteredLlm
 from learnmate.llm.types import (
     FAST_PURPOSES,
     BooksAnswer,
@@ -81,7 +82,9 @@ def test_output_models_validate() -> None:
 
 
 def test_fake_selected_in_tests(settings: Settings) -> None:
-    assert isinstance(create_app(settings).state.llm, FakeLlm)
+    llm = create_app(settings).state.llm
+    assert isinstance(llm, MeteredLlm)
+    assert isinstance(llm.inner, FakeLlm)
     assert isinstance(make_llm(Settings()), FakeLlm)
 
 
