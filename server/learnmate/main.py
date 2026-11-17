@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from learnmate.api import data, family
+from learnmate.api import data, family, materials, subjects
 from learnmate.auth import install_device_token_auth
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
@@ -45,6 +45,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_device_token_auth(app, settings.device_token)
     app.include_router(family.router)
     app.include_router(data.router)
+    app.include_router(subjects.router)
+    app.include_router(materials.router)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:
