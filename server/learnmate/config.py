@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     device_token: str = ""
 
+    # Telegram
+    telegram_bot_token: str = ""
+    telegram_poll_seconds: float = 2.0
+    # IANA name; times in messages are shown in this zone.
+    timezone: str = "UTC"
+
     @property
     def database_url(self) -> str:
         return f"sqlite:///{self.data_dir / 'learnmate.db'}"
