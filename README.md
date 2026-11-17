@@ -87,19 +87,21 @@ The database is `learnmate.db` in `DATA_DIR`.
 
 Settings come from the environment:
 
-| Variable                 | Meaning                                 | Default                     |
-| ------------------------ | --------------------------------------- | --------------------------- |
-| `DATA_DIR`               | Where the database and files are kept   | `data`                      |
-| `DEVICE_TOKEN`           | Token the app sends on every request    | empty                       |
-| `MODEL_MAIN`             | Model for lessons, answers and tests    | `claude-sonnet-5-5`         |
-| `MODEL_FAST`             | Model for page reading and rewriting    | `claude-haiku-4-5-20251001` |
-| `ANTHROPIC_API_KEY`      | Key for the AI provider                 | empty                       |
-| `LLM_PROVIDER`           | `anthropic`, or `fake` for offline runs | `anthropic`                 |
-| `EMBED_MODEL`            | Embedding model                         | `BAAI/bge-small-en-v1.5`    |
-| `RERANK_ENABLED`         | Turn on result re-ranking               | `false`                     |
-| `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap                 | `10`                        |
+| Variable                 | Meaning                                                | Default                     |
+| ------------------------ | ------------------------------------------------------ | --------------------------- |
+| `DATA_DIR`               | Where the database and files are kept                  | `data`                      |
+| `DEVICE_TOKEN`           | Token the app sends on every request                   | empty                       |
+| `MODEL_MAIN`             | Model for lessons, answers and tests                   | `claude-sonnet-5-5`         |
+| `MODEL_FAST`             | Model for page reading and rewriting                   | `claude-haiku-4-5-20251001` |
+| `ANTHROPIC_API_KEY`      | Key for the AI provider                                | empty                       |
+| `LLM_PROVIDER`           | `anthropic`, or `fake` for offline runs                | `anthropic`                 |
+| `EMBED_MODEL`            | Embedding model                                        | `BAAI/bge-small-en-v1.5`    |
+| `RERANK_ENABLED`         | Turn on result re-ranking                              | `false`                     |
+| `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap                                | `10`                        |
+| `LLM_PRICES`             | USD per million input/output tokens per model, as JSON | Sonnet 3/15, Haiku 1/5      |
+| `LLM_WEB_SEARCH_USD`     | Price of one web search                                | `0.01`                      |
 
-The Telegram bot only starts when `TELEGRAM_BOT_TOKEN` is set (messages wait in the outbox until then); tests never need it. Times in messages use `TIMEZONE` (an IANA name, default `UTC`).
+The Telegram bot only starts when `TELEGRAM_BOT_TOKEN` is set (messages wait in the outbox until then); tests never need it. Times in messages use `TIMEZONE` (an IANA name, default `UTC`). The month for the AI budget follows `TIMEZONE`; alerts go to Telegram at 80% and 100%, once each per month.
 
 Every product default in `server/learnmate/config.py` (PIN rules, lockouts, inactivity limits, grade bands) can be overridden by its upper-cased name, e.g. `PIN_LENGTH=6`.
 

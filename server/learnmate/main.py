@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from learnmate.api import data, family, materials, subjects
+from learnmate.api import budget, data, family, materials, subjects
 from learnmate.auth import install_device_token_auth
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
 from learnmate.db import create_db_engine, make_session_factory
 from learnmate.llm import make_llm
+from learnmate.llm.budget import BudgetReached
+from learnmate.llm.metered import MeteredLlm
 from learnmate.telegram.bot import make_telegram_runner
 from learnmate.telegram.links import TelegramHooks
 
@@ -31,11 +33,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     engine = create_db_engine(settings.database_url)
     app = FastAPI(title="Learnmate", lifespan=lifespan)
     app.state.settings = settings
-    app.state.llm = make_llm(settings)
     app.state.engine = engine
     clock = SystemClock()
     app.state.clock = clock
     app.state.session_factory = make_session_factory(engine, clock)
+    app.state.llm = MeteredLlm(
+        make_llm(settings), app.state.session_factory, settings, clock
+    )
     hooks = TelegramHooks()
     app.state.telegram_hooks = hooks
     app.state.telegram_runner = make_telegram_runner(
@@ -47,6 +51,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(data.router)
     app.include_router(subjects.router)
     app.include_router(materials.router)
+    app.include_router(budget.router)
+    app.add_exception_handler(BudgetReached, budget.budget_reached_handler)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:

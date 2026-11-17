@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from learnmate.config import Settings, get_settings
+from learnmate.config import ModelPrice, Settings, get_settings
 
 
 @pytest.fixture(autouse=True)
@@ -34,6 +34,9 @@ def test_defaults() -> None:
     assert s.rerank_enabled is False
     assert s.llm_monthly_budget_usd == 10.0
     assert s.llm_budget_alert_fraction == 0.8
+    assert s.llm_prices[s.model_main] == ModelPrice(input=3.0, output=15.0)
+    assert s.llm_prices[s.model_fast] == ModelPrice(input=1.0, output=5.0)
+    assert s.llm_web_search_usd == 0.01
     assert s.data_dir == Path("data")
     assert s.device_token == ""
     assert s.upload_max_mb == 50
@@ -51,14 +54,22 @@ OVERRIDES = {
     "telegram_bot_token": ("123:fake", "123:fake"),
     "telegram_poll_seconds": ("0.5", 0.5),
     "timezone": ("Asia/Kolkata", "Asia/Kolkata"),
-    "model_main": ("m1", "m1"),
-    "model_fast": ("m2", "m2"),
+    "model_main": ("claude-sonnet-5-5", "claude-sonnet-5-5"),
+    "model_fast": ("claude-haiku-4-5-20251001", "claude-haiku-4-5-20251001"),
     "anthropic_api_key": ("k1", "k1"),
     "llm_provider": ("anthropic", "anthropic"),
     "embed_model": ("e1", "e1"),
     "rerank_enabled": ("true", True),
     "llm_monthly_budget_usd": ("25", 25.0),
     "llm_budget_alert_fraction": ("0.5", 0.5),
+    "llm_prices": (
+        '{"claude-sonnet-5-5":{"input":2,"output":4},"claude-haiku-4-5-20251001":{"input":1,"output":2}}',
+        {
+            "claude-sonnet-5-5": ModelPrice(input=2, output=4),
+            "claude-haiku-4-5-20251001": ModelPrice(input=1, output=2),
+        },
+    ),
+    "llm_web_search_usd": ("0.02", 0.02),
     "pin_length": ("6", 6),
     "pin_max_wrong": ("7", 7),
     "pin_lockout_seconds": ("600", 600),
@@ -143,3 +154,21 @@ def test_pin_length_minimum() -> None:
 def test_alert_fraction_bounds(fraction: float) -> None:
     with pytest.raises(ValidationError):
         Settings(llm_budget_alert_fraction=fraction)
+
+
+def test_model_without_price_fails() -> None:
+    with pytest.raises(ValidationError):
+        Settings(model_main="other-model")
+    with pytest.raises(ValidationError):
+        Settings(model_fast="other-model")
+
+
+def test_model_with_price_passes() -> None:
+    prices = {"other-model": ModelPrice(input=1, output=2)}
+    s = Settings(model_main="other-model", model_fast="other-model", llm_prices=prices)
+    assert s.llm_prices == prices
+
+
+def test_negative_budget_fails() -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_monthly_budget_usd=-1)

@@ -5,8 +5,15 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ModelPrice(BaseModel):
+    """USD per million tokens."""
+
+    input: float = Field(ge=0)
+    output: float = Field(ge=0)
 
 
 class Settings(BaseSettings):
@@ -39,6 +46,13 @@ class Settings(BaseSettings):
     rerank_enabled: bool = False
     llm_monthly_budget_usd: float = 10.0
     llm_budget_alert_fraction: float = 0.8
+    # USD per million tokens for each model; override as JSON, e.g.
+    # LLM_PRICES='{"<model id>": {"input": 3, "output": 15}}'.
+    llm_prices: dict[str, ModelPrice] = {
+        "claude-sonnet-5-5": ModelPrice(input=3.0, output=15.0),
+        "claude-haiku-4-5-20251001": ModelPrice(input=1.0, output=5.0),
+    }
+    llm_web_search_usd: float = Field(0.01, ge=0)  # per search
 
     # Session PIN
     pin_length: int = 4
@@ -84,6 +98,11 @@ class Settings(BaseSettings):
             raise ValueError("pin_length must be at least 4")
         if not 0 < self.llm_budget_alert_fraction < 1:
             raise ValueError("llm_budget_alert_fraction must be between 0 and 1")
+        for model in (self.model_main, self.model_fast):
+            if model not in self.llm_prices:
+                raise ValueError(f"llm_prices has no price for {model}")
+        if self.llm_monthly_budget_usd < 0:
+            raise ValueError("llm_monthly_budget_usd must not be negative")
         return self
 
 
