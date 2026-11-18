@@ -31,6 +31,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(autouse=True)
 def _fake_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "fake")
+    monkeypatch.setenv("EMBED_PROVIDER", "fake")
 
 
 @pytest.fixture
@@ -39,6 +40,7 @@ def settings(tmp_path: Path) -> Settings:
         data_dir=tmp_path / "data",
         device_token="test-device-token",
         llm_provider="fake",
+        embed_provider="fake",
     )
 
 

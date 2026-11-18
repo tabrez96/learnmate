@@ -16,6 +16,8 @@ dependencies = [
   "pypdfium2>=5",
   "python-docx>=1.2",
   "pillow>=12",
+  "fastembed>=0.7",
+  "numpy>=2.3",
 ]
 
 [project.optional-dependencies]

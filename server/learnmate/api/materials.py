@@ -171,6 +171,7 @@ def upload_material(
         settings,
         material.id,
         llm=request.app.state.llm,
+        embedder=request.app.state.embedder,
         clock=request.app.state.clock,
     )
     return _to_out(db, material)

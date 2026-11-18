@@ -20,8 +20,16 @@ from learnmate.ingest.readers import (
 )
 from learnmate.llm.budget import REACHED_MESSAGE, BudgetReached, require_budget
 from learnmate.llm.types import Llm, LlmError
-from learnmate.models import Chapter, Chunk, Material, MaterialFile, MaterialPage
+from learnmate.models import (
+    Chapter,
+    Chunk,
+    Material,
+    MaterialFile,
+    MaterialPage,
+    Subject,
+)
 from learnmate.rag.chunk import PageInput, chunk_pages
+from learnmate.rag.embed import Embedder, embed_input, encode
 
 CHAPTER_PREVIEW_CHARS = (
     800  # per page sent to chapter detection; headings sit at the top
@@ -54,6 +62,7 @@ def ingest(
     material_id: int,
     *,
     llm: Llm,
+    embedder: Embedder,
     clock: Clock,
 ) -> None:
     # Material ids can be reused after a delete, so every write is tied to the
@@ -64,7 +73,7 @@ def ingest(
             return
         created_at = material.created_at
     try:
-        _run(session_factory, settings, material_id, created_at, llm, clock)
+        _run(session_factory, settings, material_id, created_at, llm, embedder, clock)
     except IngestFailed as exc:
         _fail(session_factory, material_id, created_at, str(exc))
     except Exception:
@@ -94,6 +103,7 @@ def _run(
     material_id: int,
     created_at: dt.datetime,
     llm: Llm,
+    embedder: Embedder,
     clock: Clock,
 ) -> None:
     with session_factory() as db:
@@ -102,6 +112,7 @@ def _run(
             return
         hint = material.chapters_hint
         title = material.title
+        subject_name = db.get(Subject, material.subject_id).name
         sources: list[tuple[Path, str]] = [
             (resolve_stored(settings.data_dir, f.path), f.mime)
             for f in db.scalars(
@@ -159,6 +170,18 @@ def _run(
         raise IngestFailed(UNEXPECTED_MESSAGE) from exc
     chapters = clean(guesses, len(texts), given=given_names(hint), fallback=title)
 
+    owner = page_chapters([c.start_page for c in chapters], len(texts))
+    drafts = chunk_pages(
+        [PageInput(page=i + 1, chapter=owner[i], text=t) for i, t in enumerate(texts)]
+    )
+    blobs = encode(
+        embedder,
+        [
+            embed_input(subject_name, title, chapters[d.chapter].name, d.text)
+            for d in drafts
+        ],
+    )
+
     with session_factory() as db:
         material = _current(db, material_id, created_at)
         if material is None:
@@ -169,18 +192,11 @@ def _run(
         ]
         db.add_all(rows)
         db.flush()
-        owner = page_chapters([c.start_page for c in chapters], len(texts))
         pages = db.scalars(
             select(MaterialPage).where(MaterialPage.material_id == material_id)
         )
         for row in pages:
             row.chapter_id = rows[owner[row.page - 1]].id
-        drafts = chunk_pages(
-            [
-                PageInput(page=i + 1, chapter=owner[i], text=t)
-                for i, t in enumerate(texts)
-            ]
-        )
         db.add_all(
             Chunk(
                 material_id=material_id,
@@ -188,8 +204,10 @@ def _run(
                 page=d.page,
                 position=d.position,
                 text=d.text,
+                embedding=blob,
+                embed_model=embedder.model,
             )
-            for d in drafts
+            for d, blob in zip(drafts, blobs, strict=True)
         )
         material.status = "ready"
         material.error = None

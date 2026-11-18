@@ -2,6 +2,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
+import numpy as np
 import pytest
 from sqlalchemy import func, select, text
 
@@ -31,6 +32,8 @@ from learnmate.models import (
     MaterialPage,
     Subject,
 )
+from learnmate.rag.embed import embed_input
+from learnmate.rag.fake_embed import FakeEmbedder
 from learnmate.rag.keyword import keyword_search
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -127,8 +130,15 @@ def make_material(sessions, settings):
 
 @pytest.fixture
 def run(sessions, settings, clock):
-    def go(material_id, llm, *, cfg=None):
-        ingest(sessions, cfg or settings, material_id, llm=llm, clock=clock)
+    def go(material_id, llm, *, cfg=None, embedder=None):
+        ingest(
+            sessions,
+            cfg or settings,
+            material_id,
+            llm=llm,
+            embedder=embedder or FakeEmbedder("fake-test"),
+            clock=clock,
+        )
         with sessions() as db:
             material = db.get(Material, material_id)
             pages = list(
@@ -339,6 +349,10 @@ def test_upload_runs_ingest_end_to_end(client, settings):
     assert body["status"] == "ready"
     assert body["pages_read"] == 3
     assert len(body["chapters"]) >= 1
+    with client.app.state.session_factory() as db:
+        chunks = list(db.scalars(select(Chunk)))
+    assert chunks
+    assert all(c.embedding is not None for c in chunks)
 
 
 CYCLE_CHAPTERS = [("The Water Cycle", 1), ("Rocks and Soil", 3)]
@@ -398,3 +412,78 @@ def test_failed_ingest_leaves_no_chunks(make_material, run, sessions, settings):
             text("SELECT count(*) FROM chunk_fts WHERE chunk_fts MATCH '\"water\"'")
         )
     assert hits == 0
+
+
+class BrokenEmbedder:
+    model = "broken"
+
+    def __init__(self):
+        self.calls = 0
+
+    def embed(self, texts):
+        self.calls += 1
+        raise RuntimeError("boom")
+
+
+def _chunks(sessions, material_id):
+    with sessions() as db:
+        return list(
+            db.scalars(
+                select(Chunk)
+                .where(Chunk.material_id == material_id)
+                .order_by(Chunk.position)
+            )
+        )
+
+
+def test_every_chunk_has_normalised_embedding(make_material, run, sessions, settings):
+    material_id = make_material(["typed.pdf"])
+    material, _, _ = run(
+        material_id,
+        ScriptedLlm(settings, chapters=CYCLE_CHAPTERS),
+        embedder=FakeEmbedder("fake-a", dim=6),
+    )
+    chunks = _chunks(sessions, material.id)
+    assert chunks
+    for c in chunks:
+        assert c.embed_model == "fake-a"
+        vector = np.frombuffer(c.embedding, np.float32)
+        assert len(vector) == 6
+        assert abs(np.linalg.norm(vector) - 1) < 1e-5
+
+
+def test_embedding_input_has_subject_title_chapter_prefix(
+    make_material, run, sessions, settings
+):
+    embedder = FakeEmbedder("fake-a")
+    material, _, _ = run(
+        make_material(["typed.pdf"]),
+        ScriptedLlm(settings, chapters=CYCLE_CHAPTERS),
+        embedder=embedder,
+    )
+    chunks = _chunks(sessions, material.id)
+    inputs = [t for batch in embedder.calls for t in batch]
+    assert len(inputs) == len(chunks)
+    with sessions() as db:
+        names = {c.id: c.name for c in db.scalars(select(Chapter))}
+    for sent, chunk in zip(inputs, chunks, strict=True):
+        assert sent == embed_input(
+            "Science", "Unit", names[chunk.chapter_id], chunk.text
+        )
+    assert {names[c.chapter_id] for c in chunks} == {
+        "The Water Cycle",
+        "Rocks and Soil",
+    }
+
+
+def test_embedder_failure_ends_failed(make_material, run, sessions, settings):
+    embedder = BrokenEmbedder()
+    material, _, _ = run(
+        make_material(["typed.pdf"]),
+        ScriptedLlm(settings, chapters=CYCLE_CHAPTERS),
+        embedder=embedder,
+    )
+    assert embedder.calls == 1
+    assert material.status == "failed"
+    assert material.error == UNEXPECTED_MESSAGE
+    assert _chunks(sessions, material.id) == []
