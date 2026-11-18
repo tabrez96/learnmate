@@ -67,3 +67,24 @@ def test_keyword_search_matches_stemmed_word(db, chapters):
     material_id, (one, _) = chapters
     found = add(db, material_id, one, 1, "A river runs to the sea.")
     assert keyword_search(db, "rivers", chapter_ids=[one.id])[0][0] == found
+
+
+def test_keyword_search_by_material(db, chapters):
+    material_id, (one, _) = chapters
+    other = Material(subject_id=1, title="Other", kind="upload")
+    db.add(other)
+    db.flush()
+    mine = add(db, material_id, one, 1, "Photosynthesis in leaves.")
+    db.add(Chunk(material_id=other.id, page=1, position=1, text="Photosynthesis too."))
+    db.flush()
+    assert [
+        h[0] for h in keyword_search(db, "photosynthesis", material_ids=[material_id])
+    ] == [mine]
+    assert keyword_search(db, "photosynthesis", material_ids=[]) == []
+
+
+def test_keyword_search_needs_one_scope(db, chapters):
+    with pytest.raises(ValueError):
+        keyword_search(db, "photosynthesis")
+    with pytest.raises(ValueError):
+        keyword_search(db, "photosynthesis", chapter_ids=[1], material_ids=[1])
