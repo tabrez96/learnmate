@@ -64,6 +64,7 @@ OVERRIDES = {
     "embed_provider": ("fake", "fake"),
     "embed_cache_dir": ("/tmp/models", Path("/tmp/models")),
     "rerank_enabled": ("true", True),
+    "rag_min_similarity": ("0.5", 0.5),
     "llm_monthly_budget_usd": ("25", 25.0),
     "llm_budget_alert_fraction": ("0.5", 0.5),
     "llm_prices": (

@@ -664,6 +664,7 @@ dependencies = [
 dev = [
     { name = "httpx" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 
@@ -684,6 +685,7 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "python-telegram-bot", specifier = ">=22.0,<23" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },

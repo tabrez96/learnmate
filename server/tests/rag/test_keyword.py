@@ -39,7 +39,7 @@ def test_fts_query_splits_on_underscores():
 
 
 def test_fts_query_quotes_words():
-    assert fts_query('photo-synthesis "AND" *') == '"photo" OR "synthesis" OR "and"'
+    assert fts_query('photo-synthesis "NEAR" *') == '"photo" OR "synthesis" OR "near"'
     assert fts_query("!!") is None
 
 
@@ -88,3 +88,15 @@ def test_keyword_search_needs_one_scope(db, chapters):
         keyword_search(db, "photosynthesis")
     with pytest.raises(ValueError):
         keyword_search(db, "photosynthesis", chapter_ids=[1], material_ids=[1])
+
+
+def test_fts_query_drops_stopwords():
+    assert fts_query("What is the Article 21?") == '"article" OR "21"'
+    assert fts_query("what is the") is None
+
+
+def test_stopword_question_has_no_keyword_hits(db, chapters):
+    material_id, chapters = chapters
+    add(db, material_id, chapters[0], 1, "The water cycle is the path of water.")
+    ids = [c.id for c in chapters]
+    assert keyword_search(db, "who is the", chapter_ids=ids) == []

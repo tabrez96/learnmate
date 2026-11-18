@@ -5,6 +5,80 @@ import re
 from sqlalchemy import bindparam, text
 from sqlalchemy.orm import Session
 
+# Question and function words; matching them would let any question bypass the relevance floor.
+STOPWORDS = frozenset(
+    [
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "been",
+        "but",
+        "by",
+        "can",
+        "could",
+        "did",
+        "do",
+        "does",
+        "for",
+        "from",
+        "had",
+        "has",
+        "have",
+        "how",
+        "i",
+        "if",
+        "in",
+        "into",
+        "is",
+        "it",
+        "its",
+        "me",
+        "my",
+        "of",
+        "on",
+        "or",
+        "our",
+        "should",
+        "so",
+        "than",
+        "that",
+        "the",
+        "their",
+        "them",
+        "then",
+        "there",
+        "these",
+        "they",
+        "this",
+        "those",
+        "to",
+        "was",
+        "we",
+        "were",
+        "what",
+        "when",
+        "where",
+        "which",
+        "who",
+        "whom",
+        "whose",
+        "why",
+        "will",
+        "with",
+        "would",
+        "you",
+        "your",
+        "about",
+        "tell",
+        "explain",
+        "describe",
+    ]
+)
+
 _SEARCH = """
     SELECT chunk.id, bm25(chunk_fts) AS rank
     FROM chunk_fts JOIN chunk ON chunk.id = chunk_fts.rowid
@@ -21,8 +95,8 @@ _SEARCH_MATERIALS = text(_SEARCH.format(column="material_id")).bindparams(
 
 
 def fts_query(text: str) -> str | None:
-    """Each word quoted and OR-ed, so user text can't break FTS5 syntax; None if no words."""
-    words = re.findall(r"[^\W_]+", text.lower())
+    """Each content word quoted and OR-ed, so user text can't break FTS5 syntax; None if no words."""
+    words = [w for w in re.findall(r"[^\W_]+", text.lower()) if w not in STOPWORDS]
     if not words:
         return None
     return " OR ".join(f'"{w}"' for w in dict.fromkeys(words))

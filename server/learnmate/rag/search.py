@@ -10,6 +10,7 @@ import numpy as np
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from learnmate.config import Settings
 from learnmate.llm.types import Llm, LlmError, Turn
 from learnmate.models import Chunk
 from learnmate.rag.embed import Embedder, to_blobs
@@ -23,7 +24,9 @@ TOP_K = (
 RRF_K = 60
 MAX_PASSAGES = 6
 MAX_CHARS = 5000  # total passage text; the first passage is always kept even if longer
-MIN_SIMILARITY = 0.35  # relevance floor for the best cosine when BM25 finds nothing
+MIN_SIMILARITY = Settings.model_fields[
+    "rag_min_similarity"
+].default  # callers pass settings.rag_min_similarity
 MIN_OVERLAP = (
     20  # shortest repeated text treated as chunk overlap when joining neighbours
 )
@@ -113,10 +116,8 @@ def _by_score(pair: tuple[int, float]) -> tuple[float, int]:
     return -pair[1], pair[0]
 
 
-def below_floor(best_similarity: float | None, keyword_hits: int) -> bool:
-    return keyword_hits == 0 and (
-        best_similarity is None or best_similarity < MIN_SIMILARITY
-    )
+def below_floor(best_similarity: float | None, keyword_hits: int, floor: float) -> bool:
+    return keyword_hits == 0 and (best_similarity is None or best_similarity < floor)
 
 
 def _join(a: str, b: str) -> str:
@@ -186,6 +187,7 @@ def search(
     query: str,
     *,
     rerank: Reranker = no_rerank,
+    min_similarity: float = MIN_SIMILARITY,
 ) -> list[SearchHit]:
     """Up to 6 passages from inside the scope; empty when nothing is relevant."""
     if not query.strip() or not scope.ids:
@@ -196,7 +198,7 @@ def search(
     else:
         keyword = keyword_search(db, query, material_ids=ids, limit=TOP_K)
     vectors, best = vector_search(db, embedder, scope, query)
-    if below_floor(best, len(keyword)):
+    if below_floor(best, len(keyword), min_similarity):
         return []
     fused = rrf([[i for i, _ in keyword], [i for i, _ in vectors]])[:TOP_K]
     rows = {
