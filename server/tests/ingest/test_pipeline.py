@@ -3,7 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 
 from learnmate.db import make_session_factory
 from learnmate.ingest import ingest
@@ -23,7 +23,15 @@ from learnmate.llm.types import (
     PageText,
     Usage,
 )
-from learnmate.models import Chapter, Material, MaterialFile, MaterialPage, Subject
+from learnmate.models import (
+    Chapter,
+    Chunk,
+    Material,
+    MaterialFile,
+    MaterialPage,
+    Subject,
+)
+from learnmate.rag.keyword import keyword_search
 
 FIXTURES = Path(__file__).parent / "fixtures"
 FAKE_TEXT = "Plants make food from sunlight."
@@ -331,3 +339,62 @@ def test_upload_runs_ingest_end_to_end(client, settings):
     assert body["status"] == "ready"
     assert body["pages_read"] == 3
     assert len(body["chapters"]) >= 1
+
+
+CYCLE_CHAPTERS = [("The Water Cycle", 1), ("Rocks and Soil", 3)]
+
+
+def _ingest_typed(make_material, run, settings):
+    material, _, chapters = run(
+        make_material(["typed.pdf"]), ScriptedLlm(settings, chapters=CYCLE_CHAPTERS)
+    )
+    return material, chapters
+
+
+def test_ingest_stores_chunks_with_chapter_page_and_position(
+    make_material, run, sessions, settings
+):
+    material, chapters = _ingest_typed(make_material, run, settings)
+    with sessions() as db:
+        chunks = list(
+            db.scalars(
+                select(Chunk)
+                .where(Chunk.material_id == material.id)
+                .order_by(Chunk.position)
+            )
+        )
+    assert chunks
+    assert [c.position for c in chunks] == list(range(1, len(chunks) + 1))
+    assert {c.chapter_id for c in chunks} <= {c.id for c in chapters}
+    assert all(1 <= c.page <= 3 for c in chunks)
+    assert not any("vapour" in c.text and "Soil is a mix" in c.text for c in chunks)
+
+
+def test_bm25_query_finds_known_term(make_material, run, sessions, settings):
+    _, chapters = _ingest_typed(make_material, run, settings)
+    ids = [c.id for c in chapters]
+    with sessions() as db:
+        vapour = keyword_search(db, "vapour", chapter_ids=ids)
+        soil = keyword_search(db, "soil", chapter_ids=ids)
+        first_vapour = db.get(Chunk, vapour[0][0])
+        first_soil = db.get(Chunk, soil[0][0])
+        assert "vapour" in first_vapour.text
+        assert (first_vapour.page, first_vapour.chapter_id) == (1, chapters[0].id)
+        assert (first_soil.page, first_soil.chapter_id) == (3, chapters[1].id)
+
+
+def test_failed_ingest_leaves_no_chunks(make_material, run, sessions, settings):
+    material, _, _ = run(
+        make_material(["typed.pdf"]), ScriptedLlm(settings, fail_chapters=True)
+    )
+    with sessions() as db:
+        assert (
+            db.scalar(
+                select(func.count(Chunk.id)).where(Chunk.material_id == material.id)
+            )
+            == 0
+        )
+        hits = db.scalar(
+            text("SELECT count(*) FROM chunk_fts WHERE chunk_fts MATCH '\"water\"'")
+        )
+    assert hits == 0
