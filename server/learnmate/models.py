@@ -159,6 +159,23 @@ class Chapter(Base):
     position: Mapped[int]
 
 
+class MaterialPage(Base):
+    __tablename__ = "material_page"
+    __table_args__ = (
+        UniqueConstraint("material_id", "page", name="uq_material_page_material_page"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    material_id: Mapped[int] = _cascade_fk("material.id")
+    # Set once chapters are detected; null until then.
+    chapter_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chapter.id", ondelete="SET NULL"), index=True
+    )
+    # 1-based across all files of the material, in upload order.
+    page: Mapped[int]
+    text: Mapped[str] = mapped_column(Text)
+
+
 class Figure(Base):
     __tablename__ = "figure"
 

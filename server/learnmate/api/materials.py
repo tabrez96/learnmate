@@ -166,7 +166,12 @@ def upload_material(
         raise
 
     background.add_task(
-        ingest.ingest, request.app.state.session_factory, settings, material.id
+        ingest.ingest,
+        request.app.state.session_factory,
+        settings,
+        material.id,
+        llm=request.app.state.llm,
+        clock=request.app.state.clock,
     )
     return _to_out(db, material)
 

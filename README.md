@@ -78,6 +78,8 @@ python3.14 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 alembic upgrade head                                    # migrate
 uvicorn learnmate.main:create_app --factory --reload   # run
 pytest                                                  # test
+pytest tests/ingest --real                              # read real pages under data/eval/real/ with the real model (needs ANTHROPIC_API_KEY); output in data/eval/real/out/
+python tests/ingest/make_fixtures.py                    # regenerate the ingest fixtures
 # API calls need the header `Authorization: Bearer <DEVICE_TOKEN>` (only `/api/v1/health` is open)
 ruff format . && ruff check --fix .                     # format
 ruff format --check . && ruff check .                   # check
