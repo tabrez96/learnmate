@@ -1,4 +1,4 @@
-"""The background job that reads a material: page texts, progress, chapters, ready or failed."""
+"""The background job that reads a material: page texts, progress, chapters, chunks, ready or failed."""
 
 import datetime as dt
 import logging
@@ -20,7 +20,8 @@ from learnmate.ingest.readers import (
 )
 from learnmate.llm.budget import REACHED_MESSAGE, BudgetReached, require_budget
 from learnmate.llm.types import Llm, LlmError
-from learnmate.models import Chapter, Material, MaterialFile, MaterialPage
+from learnmate.models import Chapter, Chunk, Material, MaterialFile, MaterialPage
+from learnmate.rag.chunk import PageInput, chunk_pages
 
 CHAPTER_PREVIEW_CHARS = (
     800  # per page sent to chapter detection; headings sit at the top
@@ -174,6 +175,22 @@ def _run(
         )
         for row in pages:
             row.chapter_id = rows[owner[row.page - 1]].id
+        drafts = chunk_pages(
+            [
+                PageInput(page=i + 1, chapter=owner[i], text=t)
+                for i, t in enumerate(texts)
+            ]
+        )
+        db.add_all(
+            Chunk(
+                material_id=material_id,
+                chapter_id=rows[d.chapter].id,
+                page=d.page,
+                position=d.position,
+                text=d.text,
+            )
+            for d in drafts
+        )
         material.status = "ready"
         material.error = None
         db.commit()
@@ -190,6 +207,7 @@ def _fail(
         material = _current(db, material_id, created_at)
         if material is None:
             return
+        db.execute(delete(Chunk).where(Chunk.material_id == material_id))
         db.execute(delete(MaterialPage).where(MaterialPage.material_id == material_id))
         db.execute(delete(Chapter).where(Chapter.material_id == material_id))
         material.status = "failed"
