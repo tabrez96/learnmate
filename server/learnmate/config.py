@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     llm_provider: Literal["anthropic", "fake"] = "anthropic"
     embed_model: str = "BAAI/bge-small-en-v1.5"
+    embed_provider: Literal["fastembed", "fake"] = "fastembed"
+    # Where fastembed keeps downloaded model files; None uses fastembed's default.
+    embed_cache_dir: Path | None = None
     rerank_enabled: bool = False
     llm_monthly_budget_usd: float = 10.0
     llm_budget_alert_fraction: float = 0.8

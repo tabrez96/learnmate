@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -11,12 +13,22 @@ from learnmate.db import create_db_engine, make_session_factory
 from learnmate.llm import make_llm
 from learnmate.llm.budget import BudgetReached
 from learnmate.llm.metered import MeteredLlm
+from learnmate.rag.embed import make_embedder
+from learnmate.rag.reindex import reindex
 from learnmate.telegram.bot import make_telegram_runner
 from learnmate.telegram.links import TelegramHooks
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # Best-effort: if the model can't load, the API and Telegram still come up and
+    # the stale rows are retried on the next start or by the reindex command.
+    try:
+        await asyncio.to_thread(
+            reindex, app.state.session_factory, app.state.embedder, only_stale=True
+        )
+    except Exception:
+        logging.getLogger(__name__).exception("start-up re-embedding failed")
     runner = app.state.telegram_runner
     if runner is not None:
         await runner.start()
@@ -40,6 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.llm = MeteredLlm(
         make_llm(settings), app.state.session_factory, settings, clock
     )
+    app.state.embedder = make_embedder(settings)
     hooks = TelegramHooks()
     app.state.telegram_hooks = hooks
     app.state.telegram_runner = make_telegram_runner(

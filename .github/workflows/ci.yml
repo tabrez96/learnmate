@@ -6,6 +6,8 @@ on:
 jobs:
   server:
     runs-on: ubuntu-latest
+    env:
+      EMBED_CACHE_DIR: /home/runner/.cache/fastembed
     defaults:
       run:
         working-directory: server
@@ -14,6 +16,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-${{ hashFiles('server/learnmate/config.py') }}
+          restore-keys: fastembed-
       - run: pip install -e ".[dev]"
       - run: ruff format --check . && ruff check .
       - run: pytest

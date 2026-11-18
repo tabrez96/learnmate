@@ -202,7 +202,7 @@ class Chunk(Base):
     kind: Mapped[str] = mapped_column(String(16), server_default="text")
     figure_id: Mapped[int | None] = _cascade_fk("figure.id", index=False)
     text: Mapped[str] = mapped_column(Text)
-    # 384 float32 values, normalised; null until embedded.
+    # float32 values of the embedding model's dimension, normalised; null until embedded.
     embedding: Mapped[bytes | None] = mapped_column(LargeBinary)
     # Which model produced the embedding; stale rows get re-embedded.
     embed_model: Mapped[str | None] = mapped_column(String(100))
