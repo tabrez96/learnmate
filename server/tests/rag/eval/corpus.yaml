@@ -1,0 +1,314 @@
+# Invented study material for the retrieval eval. Nothing here is real school content.
+# Photo pages: make_photos.py draws vision_text onto a JPEG; the eval feeds the
+# recorded vision_text through the same code path as a real photo read.
+subjects:
+  - name: Science
+    icon: flask
+    materials:
+      - title: Science textbook
+        chapters:
+          - name: Nutrition in Plants
+            pages:
+              - text: |
+                  Chapter 3: Nutrition in Plants
+
+                  How Plants Get Food
+                  Plants make their own food, so they are called autotrophs. Animals cannot do this and depend on plants or on other animals, so they are called heterotrophs.
+                  The food is made in the green parts of a plant, mostly in the leaves. The leaf is a kitchen: the raw materials go in, and sugar comes out.
+                  The raw materials are carbon dioxide from the air, water from the soil, and sunlight.
+              - text: |
+                  Photosynthesis
+
+                  The process by which a plant makes sugar from carbon dioxide and water is called photosynthesis. It needs light, so it happens in the daytime.
+                  Leaves contain a green pigment called chlorophyll. Chlorophyll traps the energy of sunlight and uses it to join carbon dioxide and water into glucose. Oxygen is released as a by-product.
+                  Extra glucose is stored as starch. A simple test with iodine solution turns a leaf with starch blue-black. A leaf kept in the dark for some days shows no starch.
+              - text: |
+                  Other Ways of Feeding
+
+                  Roots absorb water and minerals such as nitrates from the soil. Water travels up the stem to the leaves through thin tubes called xylem.
+                  Some plants do not make their own food. Cuscuta, also called dodder, is a yellow climbing plant with no leaves. It takes ready-made food from the plant it grows on, so it is a parasite.
+                  Pitcher plants grow in soil that lacks nitrogen. They trap insects inside a jug-shaped leaf and digest them to get the missing nitrogen.
+                  Fungi such as mushrooms feed on dead and rotting matter and are called saprotrophs.
+          - name: Heat and Temperature
+            pages:
+              - text: |
+                  Chapter 4: Heat and Temperature
+
+                  Hot and Cold
+                  Temperature tells us how hot or cold an object is. Heat is the energy that moves from a hotter object to a colder one. We measure temperature with a thermometer, in degrees Celsius.
+                  A clinical thermometer is used to measure the temperature of the human body. Its scale runs from 35 to 42 degrees Celsius, and normal body temperature is about 37 degrees Celsius. A small kink near the bulb stops the mercury from sliding back, so the reading stays after the thermometer leaves the mouth.
+                  A laboratory thermometer reads from minus 10 to 110 degrees Celsius.
+              - text: |
+                  Transfer of Heat
+
+                  Heat travels in three ways. In conduction, heat passes through a solid from the hot end to the cold end without the material moving. A metal spoon left in hot tea becomes hot at the handle. Metals are good conductors; wood and plastic are poor conductors, called insulators.
+                  In convection, heat is carried by the movement of a liquid or gas. Warm water rises and cooler water sinks, setting up a current.
+                  In radiation, heat travels without any material between the objects. This is how warmth from the Sun reaches the Earth through empty space.
+                  Dark objects absorb more radiation than light objects, so people prefer white clothes in summer.
+      - title: Science notebook
+        chapters:
+          - name: Photosynthesis notes
+            pages:
+              - photo: photosynthesis-notes.jpg
+                vision_text: |
+                  12/03 Class notes - Photosynthesis
+                  Stomata = tiny pores under leaf -> CO2 in, O2 out
+                  Guard cells open/close the stomata
+                  Ms. Rao said exam asks abt guard cells!!
+                  Remember: "Sun Water Air -> Sugar" (SWAS)
+                  Eg in class: a potted money plant by window
+                   grew faster than one in the cupboard
+                  Homework: draw leaf cross-section pg 41
+          - name: Heat notes
+            pages:
+              - photo: heat-notes.jpg
+                vision_text: |
+                  20/03 Heat - class notes
+                  Sea breeze: day -> land heats faster
+                   warm air over land rises,
+                   cool air from sea moves in
+                  Night = land breeze (opp. direction)
+                  Mnemonic for 3 types: "C C R"
+                   = Conduction Convection Radiation
+                  Sir did expt: ice cube in wool lasted longer
+                   than ice cube in steel bowl
+                  Thermos flask has vacuum gap -> stops conduction
+                  Test on Friday: ch 4 only
+  - name: Civics
+    icon: scale
+    materials:
+      - title: Civics textbook
+        chapters:
+          - name: Fundamental Rights
+            pages:
+              - text: |
+                  Chapter 5: Fundamental Rights
+
+                  Rights in the Constitution
+                  The Constitution of India guarantees certain basic rights to every person. These are called Fundamental Rights because they are essential for a good life and are protected by the courts. If a right is violated, a citizen can go to the High Court or the Supreme Court.
+                  There are six groups of Fundamental Rights: the Right to Equality, the Right to Freedom, the Right against Exploitation, the Right to Freedom of Religion, Cultural and Educational Rights, and the Right to Constitutional Remedies.
+              - text: |
+                  Equality and Freedom
+
+                  Article 14 says that all persons are equal before the law, and the law protects everyone equally. A rich landowner and a farm worker stand in the same position before a judge.
+                  Article 15 forbids discrimination on grounds of religion, race, caste, sex or place of birth. Article 17 abolishes untouchability.
+                  Article 19 gives citizens the freedom of speech and expression, the freedom to form associations and the freedom to move freely throughout the country. These freedoms come with reasonable limits so that one person's freedom does not harm another.
+              - text: |
+                  Life, Exploitation and Remedies
+
+                  Article 21 protects life and personal liberty. No person can be deprived of life or liberty except by a procedure set out in law. The Supreme Court has said that this includes the right to live with dignity, and Article 21A makes education a right for children aged six to fourteen.
+                  Article 23 bans forced labour and the trafficking of human beings, and Article 24 forbids employing children under fourteen in factories or mines.
+                  Article 32 allows a person to go straight to the Supreme Court when a fundamental right is violated. Dr. B. R. Ambedkar called it the heart and soul of the Constitution.
+          - name: Local Government
+            pages:
+              - text: |
+                  Chapter 6: Local Government
+
+                  Why We Need Local Government
+                  Many problems, such as a broken street light or a blocked drain, are best solved close to the people. Local government is the level of government nearest to the citizen. In villages it is run by the panchayat and in towns by the municipality.
+                  The village panchayat is headed by the sarpanch, who is elected by the voters of the village. The Gram Sabha is the meeting of all adult residents of the village. It approves the budget and checks the work of the panchayat. It meets at least twice a year.
+              - text: |
+                  Towns and Cities
+
+                  A town is divided into wards, and the people of each ward elect a ward councillor. The councillors together form the municipal council, which looks after water supply, roads, street lighting, waste collection and public health. In a large city, the council is led by a mayor.
+                  Local bodies raise money through house tax, water charges and market fees, and also receive grants from the state government. One third of the seats in local bodies are kept for women, so that more women take part in decisions about their own neighbourhoods.
+      - title: Civics notebook
+        chapters:
+          - name: Class notes
+            pages:
+              - photo: rights-notes.jpg
+                vision_text: |
+                  05/04 Civics - Fundamental Rights
+                  Mnemonic for the six rights:
+                   "Every Fish Eats Raw Carrots Rarely"
+                  Mr. Iyer: Art 19 does NOT allow hate speech
+                  Case in class: school fees waived for 3
+                   poor kids in our town
+                  Class debate Friday: "Should voting age be 16?"
+                  Project: interview a ward councillor,
+                   due 15 May
+questions:
+  - id: q01
+    subject: Science
+    kind: paraphrase
+    question: How do green leaves make their own food?
+    expected: ["chlorophyll traps the energy of sunlight"]
+  - id: q02
+    subject: Science
+    kind: paraphrase
+    question: Why do some plants eat insects?
+    expected: ["digest them to get the missing nitrogen"]
+  - id: q03
+    subject: Science
+    kind: paraphrase
+    question: How come the doctor's thermometer doesn't drop its reading right away?
+    expected: ["stops the mercury from sliding back"]
+  - id: q04
+    subject: Science
+    kind: paraphrase
+    question: Why are pale garments nicer during scorching weather?
+    keyword_free: true
+    expected: ["Dark objects absorb more radiation than light objects"]
+  - id: q05
+    subject: Science
+    kind: paraphrase
+    question: Which kind of plant lives off another one instead of cooking for itself?
+    expected: ["takes ready-made food from the plant it grows on"]
+  - id: q06
+    subject: Science
+    kind: paraphrase
+    question: How does warmth from the sun cross the emptiness between space and us?
+    expected: ["heat travels without any material between the objects"]
+  - id: q07
+    subject: Science
+    kind: paraphrase
+    question: Which creatures must eat something else for nourishment?
+    keyword_free: true
+    expected: ["they are called heterotrophs"]
+  - id: q08
+    subject: Civics
+    kind: paraphrase
+    question: Does the law treat a wealthy person and a poor person the same way?
+    expected: ["all persons are equal before the law"]
+  - id: q09
+    subject: Civics
+    kind: paraphrase
+    question: Is it legal to hire a young boy or girl for paid labor in a coal pit?
+    keyword_free: true
+    expected: ["forbids employing children under fourteen in factories or mines"]
+  - id: q10
+    subject: Civics
+    kind: paraphrase
+    question: Where can an ordinary person go if officials take away their basic entitlements?
+    expected: ["go straight to the Supreme Court"]
+  - id: q11
+    subject: Civics
+    kind: paraphrase
+    question: Who handles lamp posts, garbage pickup and sewers in an urban area?
+    keyword_free: true
+    expected: ["street lighting, waste collection and public health"]
+  - id: q12
+    subject: Civics
+    kind: paraphrase
+    question: How are females guaranteed a place on local councils?
+    expected: ["seats in local bodies are kept for women"]
+  - id: q13
+    subject: Civics
+    kind: exact
+    question: What does Article 21 protect?
+    expected: ["protects life and personal liberty"]
+  - id: q14
+    subject: Science
+    kind: exact
+    question: What is chlorophyll?
+    expected: ["green pigment called chlorophyll"]
+  - id: q15
+    subject: Science
+    kind: exact
+    question: Explain conduction.
+    expected: ["heat passes through a solid from the hot end to the cold end"]
+  - id: q16
+    subject: Civics
+    kind: exact
+    question: What is the Gram Sabha?
+    expected: ["meeting of all adult residents of the village"]
+  - id: q17
+    subject: Civics
+    kind: exact
+    question: What does Article 14 say?
+    expected: ["all persons are equal before the law"]
+  - id: q18
+    subject: Science
+    kind: exact
+    question: What is photosynthesis?
+    expected: ["makes sugar from carbon dioxide and water is called photosynthesis"]
+  - id: q19
+    subject: Civics
+    kind: exact
+    question: What is a sarpanch?
+    expected: ["is headed by the sarpanch"]
+  - id: q20
+    subject: Science
+    kind: exact
+    question: What is convection?
+    expected: ["heat is carried by the movement of a liquid or gas"]
+  - id: q21
+    subject: Science
+    kind: exact
+    question: What does iodine solution show in a leaf?
+    expected: ["turns a leaf with starch blue-black"]
+  - id: q22
+    subject: Civics
+    kind: exact
+    question: What does a ward councillor do?
+    expected: ["the people of each ward elect a ward councillor"]
+  - id: q23
+    subject: Science
+    kind: handwritten
+    question: What are stomata?
+    expected: ["Stomata = tiny pores under leaf"]
+  - id: q24
+    subject: Science
+    kind: handwritten
+    question: What did Ms. Rao say the exam will ask about?
+    expected: ["exam asks abt guard cells"]
+  - id: q25
+    subject: Science
+    kind: handwritten
+    question: What is the trick our class uses to remember what a plant needs to make sugar?
+    expected: ["Sun Water Air -> Sugar"]
+  - id: q26
+    subject: Science
+    kind: handwritten
+    question: Why does the wind blow in from the sea during the day?
+    expected: ["land heats faster"]
+  - id: q27
+    subject: Science
+    kind: handwritten
+    question: What did the ice cube experiment in class show?
+    expected: ["ice cube in wool lasted longer"]
+  - id: q28
+    subject: Science
+    kind: handwritten
+    question: Why does a thermos flask keep drinks hot?
+    expected: ["Thermos flask has vacuum gap -> stops conduction"]
+  - id: q29
+    subject: Civics
+    kind: handwritten
+    question: What is the mnemonic for the six rights that we learned in class?
+    expected: ["Every Fish Eats Raw Carrots Rarely"]
+  - id: q30
+    subject: Civics
+    kind: handwritten
+    question: When is the project about interviewing a councillor due?
+    expected: ["due 15 May"]
+  - id: o01
+    subject: Science
+    kind: off_topic
+    question: Who won the football world cup in 2018?
+    expected: []
+  - id: o02
+    subject: Civics
+    kind: off_topic
+    question: Share a recipe for chocolate cake.
+    expected: []
+  - id: o03
+    subject: Science
+    kind: off_topic
+    question: How fast can a cheetah sprint?
+    expected: []
+  - id: o04
+    subject: Civics
+    kind: off_topic
+    question: What is the tallest mountain in Peru?
+    expected: []
+  - id: o05
+    subject: Science
+    kind: off_topic
+    question: How do I tune a guitar?
+    expected: []
+  - id: o06
+    subject: Civics
+    kind: off_topic
+    question: Who painted the Mona Lisa?
+    expected: []

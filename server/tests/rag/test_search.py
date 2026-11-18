@@ -139,7 +139,7 @@ def test_merge_neighbours_caps_passages_and_chars():
     ],
 )
 def test_below_floor(best, hits, expected):
-    assert below_floor(best, hits) is expected
+    assert below_floor(best, hits, 0.35) is expected
 
 
 def test_search_stays_in_chapter_scope(db, world):
@@ -259,3 +259,11 @@ def test_search_query_rewrites_follow_up():
 def test_search_query_falls_back_on_error():
     llm = StubLlm(LlmUnavailableError("x", Usage("m", "rewrite")))
     assert search_query(llm, "why?", HISTORY) == "why?"
+
+
+def test_search_uses_given_floor(db, world):
+    w = world
+    add(db, w["plants"], w["ch1"], 1, "A plant makes food.")
+    scope = Scope.chapters([w["ch1"].id])
+    assert len(search(db, EMB, scope, "houseplant")) == 1
+    assert search(db, EMB, scope, "houseplant", min_similarity=1.01) == []

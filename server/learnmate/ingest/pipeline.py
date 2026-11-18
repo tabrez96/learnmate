@@ -28,7 +28,7 @@ from learnmate.models import (
     MaterialPage,
     Subject,
 )
-from learnmate.rag.chunk import PageInput, chunk_pages
+from learnmate.rag.chunk import ChunkDraft, PageInput, chunk_pages
 from learnmate.rag.embed import Embedder, embed_input, encode
 
 CHAPTER_PREVIEW_CHARS = (
@@ -54,6 +54,26 @@ def page_text(llm: Llm, raw: RawPage) -> str:
     if raw.image is None:
         return raw.text
     return llm.read_page(raw.image, IMAGE_MEDIA_TYPE).value.text.strip()
+
+
+def embedded_chunks(
+    embedder: Embedder,
+    subject: str,
+    title: str,
+    chapter_names: list[str],
+    starts: list[int],
+    texts: list[str],
+) -> tuple[list[int], list[tuple[ChunkDraft, bytes]]]:
+    """Page owners (0-based chapter per page) and each chunk with its embedding."""
+    owner = page_chapters(starts, len(texts))
+    drafts = chunk_pages(
+        [PageInput(page=i + 1, chapter=owner[i], text=t) for i, t in enumerate(texts)]
+    )
+    blobs = encode(
+        embedder,
+        [embed_input(subject, title, chapter_names[d.chapter], d.text) for d in drafts],
+    )
+    return owner, list(zip(drafts, blobs, strict=True))
 
 
 def ingest(
@@ -170,16 +190,13 @@ def _run(
         raise IngestFailed(UNEXPECTED_MESSAGE) from exc
     chapters = clean(guesses, len(texts), given=given_names(hint), fallback=title)
 
-    owner = page_chapters([c.start_page for c in chapters], len(texts))
-    drafts = chunk_pages(
-        [PageInput(page=i + 1, chapter=owner[i], text=t) for i, t in enumerate(texts)]
-    )
-    blobs = encode(
+    owner, embedded = embedded_chunks(
         embedder,
-        [
-            embed_input(subject_name, title, chapters[d.chapter].name, d.text)
-            for d in drafts
-        ],
+        subject_name,
+        title,
+        [c.name for c in chapters],
+        [c.start_page for c in chapters],
+        texts,
     )
 
     with session_factory() as db:
@@ -207,7 +224,7 @@ def _run(
                 embedding=blob,
                 embed_model=embedder.model,
             )
-            for d, blob in zip(drafts, blobs, strict=True)
+            for d, blob in embedded
         )
         material.status = "ready"
         material.error = None

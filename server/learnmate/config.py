@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # Where fastembed keeps downloaded model files; None uses fastembed's default.
     embed_cache_dir: Path | None = None
     rerank_enabled: bool = False
+    # Relevance floor: a search with no keyword match returns nothing when the best
+    # cosine is below this. Tuned with tests/rag (docs/retrieval-eval.md).
+    # Placeholder until the first CI run of tests/rag; set to round((O + A) / 2, 2) from its report (A = floor-dependent min).
+    rag_min_similarity: float = Field(0.35, ge=0, le=1)
     llm_monthly_budget_usd: float = 10.0
     llm_budget_alert_fraction: float = 0.8
     # USD per million tokens for each model; override as JSON, e.g.
