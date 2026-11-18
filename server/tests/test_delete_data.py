@@ -16,6 +16,7 @@ from learnmate.models import (
     LlmUsage,
     Material,
     MaterialFile,
+    MaterialPage,
     Message,
     Outbox,
     Points,
@@ -49,6 +50,11 @@ def _populate(app: FastAPI) -> None:
         material = add(Material(subject_id=subject.id, title="Plants", kind="upload"))
         add(MaterialFile(material_id=material.id, path="1/page.pdf", mime="x", size=1))
         chapter = add(Chapter(material_id=material.id, name="Leaves", position=1))
+        add(
+            MaterialPage(
+                material_id=material.id, chapter_id=chapter.id, page=1, text="Leaves"
+            )
+        )
         figure = add(
             Figure(
                 material_id=material.id,

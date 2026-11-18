@@ -1,0 +1,54 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 188 >>
+stream
+BT /F1 12 Tf 72 760 Td 16 TL (Chapter 1: The Water Cycle) Tj T* (Water rises from the sea as vapour when the sun warms it.) Tj T* (High in the sky the vapour cools and forms clouds.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 159 >>
+stream
+BT /F1 12 Tf 72 760 Td 16 TL (Clouds release rain, snow or hail when the drops grow heavy.) Tj T* (The water runs into rivers and flows back to the sea.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 178 >>
+stream
+BT /F1 12 Tf 72 760 Td 16 TL (Chapter 2: Rocks and Soil) Tj T* (Rocks break into small pieces over many years.) Tj T* (Soil is a mix of tiny rock pieces and rotted leaves.) Tj ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000197 00000 n 
+0000000323 00000 n 
+0000000562 00000 n 
+0000000688 00000 n 
+0000000898 00000 n 
+0000001024 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1253
+%%EOF

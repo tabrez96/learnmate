@@ -19,6 +19,15 @@ from learnmate.models import StudySession, Subject
 SERVER_DIR = Path(__file__).resolve().parent.parent
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--real",
+        action="store_true",
+        help="also run the checks on real pages under data/eval/real/ "
+        "with the real AI model",
+    )
+
+
 @pytest.fixture(autouse=True)
 def _fake_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "fake")

@@ -12,6 +12,10 @@ dependencies = [
   "python-telegram-bot>=22.0,<23",
   "python-multipart>=0.0.20",
   "anthropic>=0.60",
+  "pypdf>=6",
+  "pypdfium2>=5",
+  "python-docx>=1.2",
+  "pillow>=12",
 ]
 
 [project.optional-dependencies]

@@ -107,7 +107,7 @@ def test_upgrade_creates_test_tables(engine: Engine) -> None:
 
 def test_downgrade_removes_test_tables(alembic_config: Config) -> None:
     command.upgrade(alembic_config, "head")
-    command.downgrade(alembic_config, "-1")
+    command.downgrade(alembic_config, "0002")
     eng = create_db_engine(alembic_config.get_main_option("sqlalchemy.url"))
     try:
         tables = set(inspect(eng).get_table_names())

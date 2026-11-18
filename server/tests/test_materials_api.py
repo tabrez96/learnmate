@@ -85,14 +85,12 @@ def test_upload_starts_ingest_in_background(
 ):
     calls = []
     monkeypatch.setattr(
-        ingest, "ingest", lambda factory, settings, mid: calls.append(mid)
+        ingest,
+        "ingest",
+        lambda factory, settings, mid, **kwargs: calls.append(mid),
     )
     mid = _upload(client, subject_id, [_pdf()]).json()["id"]
     assert calls == [mid]
-
-
-def test_ingest_stub_is_a_no_op():
-    assert ingest.ingest(None, None, 1) is None  # type: ignore[arg-type]
 
 
 def test_upload_rejects_unsupported_type_with_clear_error(
@@ -171,7 +169,10 @@ def test_upload_failure_leaves_no_rows_or_files(
     assert _stored(settings) == []
 
 
-def test_get_material_returns_status_pages_and_chapters(client, app, subject_id):
+def test_get_material_returns_status_pages_and_chapters(
+    client, app, subject_id, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(ingest, "ingest", lambda *args, **kwargs: None)
     mid = _upload(client, subject_id, [_pdf()]).json()["id"]
     with app.state.session_factory() as db:
         material = db.get(Material, mid)
