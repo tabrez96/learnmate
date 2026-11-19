@@ -48,8 +48,9 @@ class Settings(BaseSettings):
     embed_cache_dir: Path | None = None
     rerank_enabled: bool = False
     # Relevance floor: a search with no keyword match returns nothing when the best
-    # cosine is below this. Tuned with tests/rag (docs/retrieval-eval.md).
-    # Best-cosine floor when BM25 finds nothing; tuned on the retrieval eval for bge-small-en-v1.5. Re-tune with the eval when EMBED_MODEL changes.
+    # cosine is below this. Tuned with tests/rag (docs/retrieval-eval.md) for
+    # bge-small-en-v1.5; re-tune with the eval when EMBED_MODEL changes.
+    # Chosen 0.53: committed set off-topic max 0.499, floor-dependent min 0.555 (tests/rag).
     rag_min_similarity: float = Field(0.53, ge=0, le=1)
     llm_monthly_budget_usd: float = 10.0
     llm_budget_alert_fraction: float = 0.8

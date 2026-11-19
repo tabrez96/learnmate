@@ -50,6 +50,6 @@ Questions marked `keyword_free: true` must share no word (after stemming) with t
 
 `RAG_MIN_SIMILARITY` is the cosine below which a search returns nothing when keyword search found nothing. The floor only applies to questions with no keyword match, so it is set to the midpoint between the highest off-topic cosine (O) and the lowest cosine of an answerable question with no keyword match (A), rounded to two decimals. The test also checks that every answerable question still gets passages.
 
-Current value: 0.53, tuned on the retrieval eval for bge-small-en-v1.5 (off-topic max 0.499 on o02, floor-dependent min 0.555 on q09). When the floor needs re-tuning, the failure message of `test_off_topic_questions_get_no_passages` prints O, A (`floor-dependent min cos`), `suggested` and the ids at the edges.
+Current value: 0.53, tuned on the retrieval eval for bge-small-en-v1.5 (off-topic max 0.499 on o02, floor-dependent min 0.555 on q09). When the floor needs re-tuning, the failure message of `test_off_topic_questions_get_no_passages` prints O, A (`floor-dependent min cos`), `suggested` and the ids at the edges; copy the numbers here and into the comment in `server/learnmate/config.py`.
 
 Before changing the floor, run both sets: the real run's summary line must also show O below the floor and the floor at most A.
