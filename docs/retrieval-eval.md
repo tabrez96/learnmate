@@ -7,7 +7,7 @@ Every question is searched with the same code the mentor uses (`learnmate.rag.se
 - **recall@6**: the share of answerable questions where one of the six returned passages contains the answer.
 - **MRR**: the mean of 1 / rank of the first passage with the answer (0 when missed).
 - **The gate**: `tests/rag/test_retrieval_eval.py` fails when recall@6 is below 0.85.
-- **Off-topic questions** must return no passages. The highest cosine of any off-topic question must be below the relevance floor, and the floor must not exceed the lowest cosine of any answerable question.
+- **Off-topic questions** must return no passages. The highest cosine of any off-topic question must be below the relevance floor, and the floor must not exceed the lowest cosine of any answerable question with no keyword hit (a question with a keyword hit skips the floor).
 
 The committed set is `server/tests/rag/eval/corpus.yaml`: two invented subjects (Science, Civics), typed textbook pages, three invented notebook pages photographed with a phone, 30 answerable questions (paraphrased, exact-term and notebook-only) and 6 off-topic ones. The notebook photos are read through `iter_pages` and `page_text` with recorded vision output (`vision_text`), so no AI call is made. The real embedding model runs.
 
@@ -16,7 +16,7 @@ The committed set is `server/tests/rag/eval/corpus.yaml`: two invented subjects 
 ```sh
 cd server
 EMBED_CACHE_DIR=~/.cache/fastembed pytest tests/rag          # committed set; downloads the model once (about 70 MB)
-pytest tests/rag --real                                      # also the real set below (needs ANTHROPIC_API_KEY)
+EMBED_CACHE_DIR=~/.cache/fastembed pytest tests/rag --real   # also the real set below (needs ANTHROPIC_API_KEY)
 ```
 
 Without `EMBED_CACHE_DIR` the committed eval is skipped; the metric and corpus-shape tests always run. Without `--real` the real set is skipped and never calls the AI API.
@@ -44,12 +44,12 @@ Mix paraphrased questions, exact-term questions and notebook-only questions, plu
 
 Edit `corpus.yaml`. After changing a notebook page's `vision_text`, run `python tests/rag/eval/make_photos.py` to redraw the photos. Keep `test_set_composition` green: 30 answerable questions, and notebook-only answers present only in `vision_text`.
 
-Questions marked `keyword_free: true` must share no word (after stemming) with their subject's material, because they are the only answerable questions the relevance floor applies to. `test_keyword_free_questions_have_no_keyword_hits` checks this without the model.
+Questions marked `keyword_free: true` must share no word (after stemming) with their subject's material, so the test can check them without the model (`test_keyword_free_questions_have_no_keyword_hits`). The flag only selects questions for that test. The relevance floor applies to every answerable question with no keyword match, marked or not, so include all of them when tuning the floor.
 
 ## The relevance floor
 
 `RAG_MIN_SIMILARITY` is the cosine below which a search returns nothing when keyword search found nothing. The floor only applies to questions with no keyword match, so it is set to the midpoint between the highest off-topic cosine (O) and the lowest cosine of an answerable question with no keyword match (A), rounded to two decimals. The test also checks that every answerable question still gets passages.
 
-Current value: 0.35 (placeholder, set from the first CI run). The failure message of `test_off_topic_questions_get_no_passages` prints O, A (`floor-dependent min cos`), `suggested` and the ids at the edges; copy the numbers here and into the comment in `server/learnmate/config.py`.
+Current value: 0.53, tuned on the retrieval eval for bge-small-en-v1.5 (off-topic max 0.499 on o02, floor-dependent min 0.555 on q09). When the floor needs re-tuning, the failure message of `test_off_topic_questions_get_no_passages` prints O, A (`floor-dependent min cos`), `suggested` and the ids at the edges.
 
 Before changing the floor, run both sets: the real run's summary line must also show O below the floor and the floor at most A.

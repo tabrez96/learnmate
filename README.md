@@ -93,22 +93,22 @@ The database is `learnmate.db` in `DATA_DIR`.
 
 Settings come from the environment:
 
-| Variable                 | Meaning                                                 | Default                                         |
-| ------------------------ | ------------------------------------------------------- | ----------------------------------------------- |
-| `DATA_DIR`               | Where the database and files are kept                   | `data`                                          |
-| `DEVICE_TOKEN`           | Token the app sends on every request                    | empty                                           |
-| `MODEL_MAIN`             | Model for lessons, answers and tests                    | `claude-sonnet-5-5`                             |
-| `MODEL_FAST`             | Model for page reading and rewriting                    | `claude-haiku-4-5-20251001`                     |
-| `ANTHROPIC_API_KEY`      | Key for the AI provider                                 | empty                                           |
-| `LLM_PROVIDER`           | `anthropic`, or `fake` for offline runs                 | `anthropic`                                     |
-| `EMBED_MODEL`            | Embedding model                                         | `BAAI/bge-small-en-v1.5`                        |
-| `EMBED_PROVIDER`         | `fastembed`, or `fake` for offline runs                 | `fastembed`                                     |
-| `EMBED_CACHE_DIR`        | Where downloaded model files are kept                   | fastembed's default                             |
-| `RERANK_ENABLED`         | Turn on result re-ranking                               | `false`                                         |
-| `RAG_MIN_SIMILARITY`     | Relevance floor for search (see docs/retrieval-eval.md) | `0.35` (placeholder, set from the first CI run) |
-| `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap                                 | `10`                                            |
-| `LLM_PRICES`             | USD per million input/output tokens per model, as JSON  | Sonnet 3/15, Haiku 1/5                          |
-| `LLM_WEB_SEARCH_USD`     | Price of one web search                                 | `0.01`                                          |
+| Variable                 | Meaning                                                 | Default                                |
+| ------------------------ | ------------------------------------------------------- | -------------------------------------- |
+| `DATA_DIR`               | Where the database and files are kept                   | `data`                                 |
+| `DEVICE_TOKEN`           | Token the app sends on every request                    | empty                                  |
+| `MODEL_MAIN`             | Model for lessons, answers and tests                    | `claude-sonnet-5-5`                    |
+| `MODEL_FAST`             | Model for page reading and rewriting                    | `claude-haiku-4-5-20251001`            |
+| `ANTHROPIC_API_KEY`      | Key for the AI provider                                 | empty                                  |
+| `LLM_PROVIDER`           | `anthropic`, or `fake` for offline runs                 | `anthropic`                            |
+| `EMBED_MODEL`            | Embedding model                                         | `BAAI/bge-small-en-v1.5`               |
+| `EMBED_PROVIDER`         | `fastembed`, or `fake` for offline runs                 | `fastembed`                            |
+| `EMBED_CACHE_DIR`        | Where downloaded model files are kept                   | fastembed's default                    |
+| `RERANK_ENABLED`         | Turn on result re-ranking                               | `false`                                |
+| `RAG_MIN_SIMILARITY`     | Relevance floor for search (see docs/retrieval-eval.md) | `0.53` (tuned for `bge-small-en-v1.5`) |
+| `LLM_MONTHLY_BUDGET_USD` | Monthly AI spending cap                                 | `10`                                   |
+| `LLM_PRICES`             | USD per million input/output tokens per model, as JSON  | Sonnet 3/15, Haiku 1/5                 |
+| `LLM_WEB_SEARCH_USD`     | Price of one web search                                 | `0.01`                                 |
 
 Chunks are embedded on the server with `EMBED_MODEL`. After changing it, run `python -m learnmate.rag.reindex`; start-up also re-embeds any chunk made with a different model. `tests/rag/test_fastembed_real.py` runs only when `EMBED_CACHE_DIR` is set; it downloads the model (about 70 MB) once.
 
