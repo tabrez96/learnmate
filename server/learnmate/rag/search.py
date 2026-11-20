@@ -54,7 +54,7 @@ class Candidate:
     page: int | None
     position: int
     text: str
-    score: float  # fused RRF score (or rerank score once a reranker replaces it)
+    score: float  # fused RRF score, or the cross-encoder score after rerank
 
 
 @dataclass(frozen=True)
@@ -72,7 +72,7 @@ type Reranker = Callable[[str, list[Candidate]], list[Candidate]]
 
 
 def no_rerank(query: str, candidates: list[Candidate]) -> list[Candidate]:
-    """The hook the rerank ticket fills in; keeps the fused order."""
+    """The reranker when RERANK_ENABLED is off; keeps the fused order."""
     return candidates
 
 

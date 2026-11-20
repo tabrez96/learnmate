@@ -6,6 +6,7 @@ Every question is searched with the same code the mentor uses (`learnmate.rag.se
 
 - **recall@6**: the share of answerable questions where one of the six returned passages contains the answer.
 - **MRR**: the mean of 1 / rank of the first passage with the answer (0 when missed).
+- **s/question**: mean wall time of one search, reranker included, after the models are loaded.
 - **The gate**: `tests/rag/test_retrieval_eval.py` fails when recall@6 is below 0.85.
 - **Off-topic questions** must return no passages. The highest cosine of any off-topic question must be below the relevance floor, and the floor must not exceed the lowest cosine of any answerable question with no keyword hit (a question with a keyword hit skips the floor).
 
@@ -15,9 +16,11 @@ The committed set is `server/tests/rag/eval/corpus.yaml`: two invented subjects 
 
 ```sh
 cd server
-EMBED_CACHE_DIR=~/.cache/fastembed pytest tests/rag          # committed set; downloads the model once (about 70 MB)
+EMBED_CACHE_DIR=~/.cache/fastembed pytest tests/rag -s       # committed set; downloads the models once (about 70 MB, plus the reranker, about 1.1 GB)
 EMBED_CACHE_DIR=~/.cache/fastembed pytest tests/rag --real   # also the real set below (needs ANTHROPIC_API_KEY)
 ```
+
+The eval runs every question twice, with the reranker off and on, and prints both reports.
 
 Without `EMBED_CACHE_DIR` the committed eval is skipped; the metric and corpus-shape tests always run. Without `--real` the real set is skipped and never calls the AI API.
 
@@ -53,3 +56,22 @@ Questions marked `keyword_free: true` must share no word (after stemming) with t
 Current value: 0.53, tuned on the retrieval eval for bge-small-en-v1.5 (off-topic max 0.499 on o02, floor-dependent min 0.555 on q09). When the floor needs re-tuning, the failure message of `test_off_topic_questions_get_no_passages` prints O, A (`floor-dependent min cos`), `suggested` and the ids at the edges; copy the numbers here and into the comment in `server/learnmate/config.py`.
 
 Before changing the floor, run both sets: the real run's summary line must also show O below the floor and the floor at most A.
+
+## The reranker
+
+When `RERANK_ENABLED` is on, `search` rescores the fused top 20 candidates with the cross-encoder `BAAI/bge-reranker-base` (`RERANK_MODEL`) before neighbouring chunks are merged. The relevance floor runs first, so the reranker never turns an empty result into an answer.
+
+The rule: it is on by default only if committed-set recall@6 with it is strictly higher than without and it takes at most 1.5 s per question. `test_rerank_default_matches_eval` enforces this: it fails when the default configuration scores below the other, unless the reranker is off because it is too slow.
+
+| Set       | Rerank | recall@6 | MRR     | s/question |
+| --------- | ------ | -------- | ------- | ---------- |
+| committed | off    | 1.000    | 0.950   | 0.007      |
+| committed | on     | 1.000    | 0.983   | 0.302      |
+| real      | off    | not run  | not run | not run    |
+| real      | on     | not run  | not run | not run    |
+
+Measured on 2026-11-20 with `EMBED_CACHE_DIR=<cache> pytest tests/rag -s` (89 passed, 1 skipped) on an AMD Ryzen 9 PRO 8945HS w/ Radeon 780M Graphics. Off-topic questions were rejected 6/6 in both configurations. The only per-question difference is q28 ("Why does a thermos flask keep drinks hot?"), which moves from HIT@2 to HIT@1 with the reranker; q25 is HIT@2 in both. The real set was not run: there are no real pages yet.
+
+Decision: `RERANK_ENABLED` defaults to off because recall@6 is equal (1.000 both ways), so the rule is not met. MRR rises from 0.950 to 0.983 at 0.30 s/question, so turning it on later is a judgement call for the owner. If the reranker ever improves recall@6 within 1.5 s per question, `test_rerank_default_matches_eval` fails and the default must be turned on.
+
+Re-run and update this table when the embedding model, the reranker model or the corpus changes.

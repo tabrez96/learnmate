@@ -34,6 +34,7 @@ def test_defaults() -> None:
     assert s.embed_provider == "fastembed"
     assert s.embed_cache_dir is None
     assert s.rerank_enabled is False
+    assert s.rerank_model == "BAAI/bge-reranker-base"
     assert s.llm_monthly_budget_usd == 10.0
     assert s.llm_budget_alert_fraction == 0.8
     assert s.llm_prices[s.model_main] == ModelPrice(input=3.0, output=15.0)
@@ -64,6 +65,7 @@ OVERRIDES = {
     "embed_provider": ("fake", "fake"),
     "embed_cache_dir": ("/tmp/models", Path("/tmp/models")),
     "rerank_enabled": ("true", True),
+    "rerank_model": ("r1", "r1"),
     "rag_min_similarity": ("0.5", 0.5),
     "llm_monthly_budget_usd": ("25", 25.0),
     "llm_budget_alert_fraction": ("0.5", 0.5),

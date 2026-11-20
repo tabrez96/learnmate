@@ -13,6 +13,7 @@ from learnmate.ingest.readers import iter_pages
 from learnmate.llm import make_llm
 from learnmate.models import Subject
 from learnmate.rag.embed import FastEmbedder
+from learnmate.rag.rerank import make_reranker
 from learnmate.rag.search import Scope
 from tests.rag.retrieval_eval import (
     add_material,
@@ -20,6 +21,7 @@ from tests.rag.retrieval_eval import (
     page_matcher,
     report,
     run_question,
+    warm_up,
 )
 
 REAL_DIR = Path(__file__).resolve().parents[2] / "data" / "eval" / "real"
@@ -70,21 +72,27 @@ def test_real_retrieval_set(request, db, capsys):
 
     scope = Scope.chapters(chapter_ids)
     floor = settings.rag_min_similarity
-    outcomes = []
-    for q in yaml.safe_load(questions_file.read_text()):
-        off_topic = bool(q.get("off_topic"))
-        outcomes.append(
-            run_question(
-                db,
-                embedder,
-                scope,
-                id=q["id"],
-                kind="off_topic" if off_topic else "real",
-                question=q["question"],
-                relevant=page_matcher(db, expected_pages(q.get("expected", []))),
-                floor=floor,
+    questions = yaml.safe_load(questions_file.read_text())
+    for on in (False, True):
+        rerank = make_reranker(settings.model_copy(update={"rerank_enabled": on}))
+        warm_up(embedder, rerank)
+        outcomes = []
+        for q in questions:
+            off_topic = bool(q.get("off_topic"))
+            outcomes.append(
+                run_question(
+                    db,
+                    embedder,
+                    scope,
+                    id=q["id"],
+                    kind="off_topic" if off_topic else "real",
+                    question=q["question"],
+                    relevant=page_matcher(db, expected_pages(q.get("expected", []))),
+                    floor=floor,
+                    rerank=rerank,
+                )
             )
-        )
-    with capsys.disabled():
-        print("\n" + report("real set", outcomes, floor))
+        with capsys.disabled():
+            title = f"real set, rerank {'on' if on else 'off'}"
+            print("\n" + report(title, outcomes, floor))
     assert answerable(outcomes), "questions.yaml has no answerable questions"

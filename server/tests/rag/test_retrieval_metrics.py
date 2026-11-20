@@ -1,5 +1,7 @@
 """Harness checks that need no embedding model: metrics, matchers, corpus shape."""
 
+from dataclasses import replace
+
 from learnmate.models import Chunk, Subject
 from learnmate.rag.embed import FakeEmbedder
 from learnmate.rag.keyword import keyword_search
@@ -11,6 +13,7 @@ from tests.rag.retrieval_eval import (
     build_corpus,
     floor_dependent,
     load_corpus,
+    mean_seconds,
     mrr,
     normalise,
     page_matcher,
@@ -23,7 +26,7 @@ from tests.rag.test_search import WordEmbedder
 
 
 def outcome(rank, kind="exact", passages=1):
-    return Outcome("q", kind, "question?", rank, passages, 0.5, 0)
+    return Outcome("q", kind, "question?", rank, passages, 0.5, 0, 0.0)
 
 
 def hit(text="text", chunk_ids=(1,)):
@@ -177,9 +180,9 @@ def test_run_question_off_topic_rejected_with_fake_floor(db):
 
 
 def test_floor_dependent():
-    with_hits = Outcome("a", "exact", "q?", 1, 1, 0.5, 2)
-    without = Outcome("b", "paraphrase", "q?", 1, 1, 0.5, 0)
-    off = Outcome("c", "off_topic", "q?", None, 0, 0.3, 0)
+    with_hits = Outcome("a", "exact", "q?", 1, 1, 0.5, 2, 0.0)
+    without = Outcome("b", "paraphrase", "q?", 1, 1, 0.5, 0, 0.0)
+    off = Outcome("c", "off_topic", "q?", None, 0, 0.3, 0, 0.0)
     assert floor_dependent([with_hits, without, off]) == [without]
 
 
@@ -198,6 +201,13 @@ def test_report_lines():
     assert "recall@6=0.500" in text
     assert "floor=0.40" in text
     assert "min floor-dependent cos=0.500" in text
+    assert "s/question=0.000" in text
+
+
+def test_mean_seconds():
+    rows = [replace(outcome(1), seconds=1.0), replace(outcome(None), seconds=2.0)]
+    assert mean_seconds(rows) == 1.5
+    assert mean_seconds([]) == 0.0
 
 
 def test_expected_pages_parse_file_and_page():
