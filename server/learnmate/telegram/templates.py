@@ -41,6 +41,7 @@ LINK_REFUSED = (
 )
 NOT_LINKED = "This chat isn't connected to Learnmate."
 NEW_PIN_UNAVAILABLE = "New PIN isn't available right now."
+NEW_PIN_SENT = "New PIN sent."
 
 _TEST_LABELS = {
     "daily": "the daily test",

@@ -78,6 +78,7 @@ OVERRIDES = {
     ),
     "llm_web_search_usd": ("0.02", 0.02),
     "pin_length": ("6", 6),
+    "pin_key": ("some-key", "some-key"),
     "pin_max_wrong": ("7", 7),
     "pin_lockout_seconds": ("600", 600),
     "pin_wrong_before_fallback": ("2", 2),

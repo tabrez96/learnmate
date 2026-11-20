@@ -2,10 +2,11 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from functools import partial
 
 from fastapi import FastAPI
 
-from learnmate.api import budget, data, family, materials, subjects
+from learnmate.api import budget, data, family, materials, sessions, subjects
 from learnmate.auth import install_device_token_auth
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
@@ -15,6 +16,8 @@ from learnmate.llm.budget import BudgetReached
 from learnmate.llm.metered import MeteredLlm
 from learnmate.rag.embed import make_embedder
 from learnmate.rag.reindex import reindex
+from learnmate.sessions.pins import load_pin_cipher
+from learnmate.sessions.service import telegram_new_pin
 from learnmate.telegram.bot import make_telegram_runner
 from learnmate.telegram.links import TelegramHooks
 
@@ -42,9 +45,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
+    pin_cipher = load_pin_cipher(settings)
     engine = create_db_engine(settings.database_url)
     app = FastAPI(title="Learnmate", lifespan=lifespan)
     app.state.settings = settings
+    app.state.pin_cipher = pin_cipher
     app.state.engine = engine
     clock = SystemClock()
     app.state.clock = clock
@@ -54,6 +59,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.embedder = make_embedder(settings)
     hooks = TelegramHooks()
+    hooks.new_pin = partial(
+        telegram_new_pin, settings=settings, clock=clock, cipher=pin_cipher
+    )
     app.state.telegram_hooks = hooks
     app.state.telegram_runner = make_telegram_runner(
         settings, app.state.session_factory, clock, hooks
@@ -64,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(data.router)
     app.include_router(subjects.router)
     app.include_router(materials.router)
+    app.include_router(sessions.router)
     app.include_router(budget.router)
     app.add_exception_handler(BudgetReached, budget.budget_reached_handler)
 
