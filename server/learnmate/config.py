@@ -70,6 +70,8 @@ class Settings(BaseSettings):
 
     # Session PIN
     pin_length: int = 4
+    # Fernet key for the encrypted PIN copy; empty means a key file in data_dir.
+    pin_key: str = ""
     pin_max_wrong: int = 5
     pin_lockout_seconds: int = 15 * 60
     pin_wrong_before_fallback: int = 3
