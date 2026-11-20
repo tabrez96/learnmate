@@ -1,5 +1,6 @@
 """Shared harness for the retrieval evaluation: load a material, ask questions, score."""
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,7 +17,15 @@ from learnmate.llm.types import LlmResult, PageText
 from learnmate.models import Chapter, Chunk, Material, Subject
 from learnmate.rag.embed import Embedder
 from learnmate.rag.keyword import keyword_search
-from learnmate.rag.search import Scope, SearchHit, search, vector_search
+from learnmate.rag.search import (
+    Candidate,
+    Reranker,
+    Scope,
+    SearchHit,
+    no_rerank,
+    search,
+    vector_search,
+)
 
 K = 6
 RECALL_FLOOR = 0.85
@@ -34,6 +43,7 @@ class Outcome:
     passages: int  # passages search returned
     best_cosine: float | None
     keyword_hits: int
+    seconds: float  # wall time of search() for this question
 
 
 def add_material(
@@ -165,12 +175,25 @@ def run_question(
     question: str,
     relevant: Callable[[SearchHit], bool],
     floor: float,
+    rerank: Reranker = no_rerank,
 ) -> Outcome:
-    hits = search(db, embedder, scope, question, min_similarity=floor)
+    start = time.perf_counter()
+    hits = search(db, embedder, scope, question, min_similarity=floor, rerank=rerank)
+    seconds = time.perf_counter() - start
     rank = next((i for i, h in enumerate(hits[:K], start=1) if relevant(h)), None)
     best = vector_search(db, embedder, scope, question)[1]
     keyword = keyword_search(db, question, chapter_ids=list(scope.ids))
-    return Outcome(id, kind, question, rank, len(hits), best, len(keyword))
+    return Outcome(id, kind, question, rank, len(hits), best, len(keyword), seconds)
+
+
+def warm_up(embedder: Embedder, rerank: Reranker) -> None:
+    """Load the models before timing."""
+    embedder.embed(["warm up"])
+    rerank("warm up", [Candidate(0, 0, None, None, 0, "warm up", 0.0)])
+
+
+def mean_seconds(outcomes: list[Outcome]) -> float:
+    return sum(o.seconds for o in outcomes) / len(outcomes) if outcomes else 0.0
 
 
 def answerable(outcomes: list[Outcome]) -> list[Outcome]:
@@ -213,6 +236,7 @@ def report(title: str, outcomes: list[Outcome], floor: float) -> str:
     lines.append(
         f"recall@{K}={recall_at_k(outcomes):.3f}  MRR={mrr(outcomes):.3f}  "
         f"off-topic rejected {rejected}/{len(off)}  max off-topic cos={off_max:.3f}  "
-        f"min floor-dependent cos={dep_min}  floor={floor:.2f}"
+        f"min floor-dependent cos={dep_min}  floor={floor:.2f}  "
+        f"s/question={mean_seconds(outcomes):.3f}"
     )
     return "\n".join(lines)

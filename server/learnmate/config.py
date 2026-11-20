@@ -46,7 +46,13 @@ class Settings(BaseSettings):
     embed_provider: Literal["fastembed", "fake"] = "fastembed"
     # Where fastembed keeps downloaded model files; None uses fastembed's default.
     embed_cache_dir: Path | None = None
+    # Off by the retrieval eval (docs/retrieval-eval.md): committed-set recall@6 is 1.000
+    # without and with it (MRR 0.950 -> 0.983, 0.30 s per question).
+    # test_rerank_default_matches_eval fails if the reranker improves recall@6 within
+    # 1.5 s per question while this is off.
     rerank_enabled: bool = False
+    # Cross-encoder that rescores the fused top 20 when RERANK_ENABLED is on.
+    rerank_model: str = "BAAI/bge-reranker-base"
     # Relevance floor: a search with no keyword match returns nothing when the best
     # cosine is below this. Tuned with tests/rag (docs/retrieval-eval.md) for
     # bge-small-en-v1.5; re-tune with the eval when EMBED_MODEL changes.
