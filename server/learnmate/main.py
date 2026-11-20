@@ -6,7 +6,16 @@ from functools import partial
 
 from fastapi import FastAPI
 
-from learnmate.api import budget, data, family, materials, sessions, subjects
+from learnmate.api import (
+    budget,
+    data,
+    exams,
+    family,
+    materials,
+    plan,
+    sessions,
+    subjects,
+)
 from learnmate.auth import install_device_token_auth
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
@@ -73,6 +82,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(subjects.router)
     app.include_router(materials.router)
     app.include_router(sessions.router)
+    app.include_router(plan.router)
+    app.include_router(exams.router)
     app.include_router(budget.router)
     app.add_exception_handler(BudgetReached, budget.budget_reached_handler)
 
