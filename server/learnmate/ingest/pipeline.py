@@ -2,6 +2,7 @@
 
 import datetime as dt
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 from sqlalchemy import delete, select
@@ -11,6 +12,13 @@ from learnmate.clock import Clock
 from learnmate.config import Settings
 from learnmate.files import resolve_stored
 from learnmate.ingest.chapters import clean, given_names, page_chapters
+from learnmate.ingest.figures import (
+    figure_path,
+    find_figures,
+    generation_stamp,
+    remove_figure_files,
+    save_crop,
+)
 from learnmate.ingest.readers import (
     IMAGE_MEDIA_TYPE,
     RawPage,
@@ -23,6 +31,7 @@ from learnmate.llm.types import Llm, LlmError
 from learnmate.models import (
     Chapter,
     Chunk,
+    Figure,
     Material,
     MaterialFile,
     MaterialPage,
@@ -44,6 +53,13 @@ NO_TEXT_MESSAGE = "No text was found in this material."
 UNEXPECTED_MESSAGE = "Something went wrong while reading this material."
 
 type Sessions = sessionmaker[Session]
+
+
+@dataclass(frozen=True)
+class FigureDraft:
+    page: int
+    description: str
+    path: str
 
 
 class IngestFailed(Exception):
@@ -95,10 +111,10 @@ def ingest(
     try:
         _run(session_factory, settings, material_id, created_at, llm, embedder, clock)
     except IngestFailed as exc:
-        _fail(session_factory, material_id, created_at, str(exc))
+        _fail(session_factory, settings, material_id, created_at, str(exc))
     except Exception:
         logging.getLogger(__name__).exception("reading material %s failed", material_id)
-        _fail(session_factory, material_id, created_at, UNEXPECTED_MESSAGE)
+        _fail(session_factory, settings, material_id, created_at, UNEXPECTED_MESSAGE)
 
 
 def _current(db: Session, material_id: int, created_at: dt.datetime) -> Material | None:
@@ -157,7 +173,9 @@ def _run(
         material.pages_total = total
         db.commit()
 
+    stamp = generation_stamp(created_at)
     texts: list[str] = []
+    figures: list[FigureDraft] = []
     for n, (path, mime) in enumerate(sources, start=1):
         try:
             for raw in iter_pages(path, mime):
@@ -168,6 +186,12 @@ def _run(
                     text = page_text(llm, raw)
                 except LlmError as exc:
                     raise IngestFailed(AI_DOWN_MESSAGE.format(page=page)) from exc
+                if raw.image is not None:
+                    _check_budget(session_factory, settings, clock)
+                    for i, crop in enumerate(find_figures(llm, raw.image), start=1):
+                        rel = figure_path(material_id, stamp, page, i)
+                        if save_crop(settings.data_dir, rel, crop.png):
+                            figures.append(FigureDraft(page, crop.description, rel))
                 with session_factory() as db:
                     material = _current(db, material_id, created_at)
                     if material is None:
@@ -190,13 +214,23 @@ def _run(
         raise IngestFailed(UNEXPECTED_MESSAGE) from exc
     chapters = clean(guesses, len(texts), given=given_names(hint), fallback=title)
 
+    chapter_names = [c.name for c in chapters]
     owner, embedded = embedded_chunks(
         embedder,
         subject_name,
         title,
-        [c.name for c in chapters],
+        chapter_names,
         [c.start_page for c in chapters],
         texts,
+    )
+    figure_blobs = encode(
+        embedder,
+        [
+            embed_input(
+                subject_name, title, chapter_names[owner[f.page - 1]], f.description
+            )
+            for f in figures
+        ],
     )
 
     with session_factory() as db:
@@ -226,6 +260,31 @@ def _run(
             )
             for d, blob in embedded
         )
+        next_position = max((d.position for d, _ in embedded), default=-1) + 1
+        for i, (f, blob) in enumerate(zip(figures, figure_blobs, strict=True)):
+            chapter_id = rows[owner[f.page - 1]].id
+            figure = Figure(
+                material_id=material_id,
+                chapter_id=chapter_id,
+                page=f.page,
+                path=f.path,
+                description=f.description,
+            )
+            db.add(figure)
+            db.flush()
+            db.add(
+                Chunk(
+                    material_id=material_id,
+                    chapter_id=chapter_id,
+                    page=f.page,
+                    position=next_position + i,
+                    kind="figure",
+                    figure_id=figure.id,
+                    text=f.description,
+                    embedding=blob,
+                    embed_model=embedder.model,
+                )
+            )
         material.status = "ready"
         material.error = None
         db.commit()
@@ -236,15 +295,21 @@ def _damaged(n: int, total: int) -> str:
 
 
 def _fail(
-    session_factory: Sessions, material_id: int, created_at: dt.datetime, message: str
+    session_factory: Sessions,
+    settings: Settings,
+    material_id: int,
+    created_at: dt.datetime,
+    message: str,
 ) -> None:
     with session_factory() as db:
         material = _current(db, material_id, created_at)
         if material is None:
             return
         db.execute(delete(Chunk).where(Chunk.material_id == material_id))
+        db.execute(delete(Figure).where(Figure.material_id == material_id))
         db.execute(delete(MaterialPage).where(MaterialPage.material_id == material_id))
         db.execute(delete(Chapter).where(Chapter.material_id == material_id))
         material.status = "failed"
         material.error = message
         db.commit()
+    remove_figure_files(settings.data_dir, material_id, generation_stamp(created_at))

@@ -72,6 +72,7 @@ class Passage(BaseModel):
     material: str
     chapter: str
     page: int | None = None
+    figure_id: int | None = None
 
 
 class Turn(BaseModel):

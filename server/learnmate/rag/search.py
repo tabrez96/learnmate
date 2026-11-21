@@ -55,6 +55,7 @@ class Candidate:
     position: int
     text: str
     score: float  # fused RRF score, or the cross-encoder score after rerank
+    figure_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,7 @@ class SearchHit:
     page: int | None  # page of the first chunk in reading order
     text: str
     score: float  # best score among its chunks
+    figure_id: int | None = None
 
 
 type Reranker = Callable[[str, list[Candidate]], list[Candidate]]
@@ -130,9 +132,11 @@ def _join(a: str, b: str) -> str:
 
 
 def _runs(cands: list[Candidate]) -> list[SearchHit]:
-    groups: dict[tuple[int, int | None], list[Candidate]] = defaultdict(list)
+    groups: dict[tuple[int, int | None, int | None], list[Candidate]] = defaultdict(
+        list
+    )
     for c in cands:
-        groups[(c.material_id, c.chapter_id)].append(c)
+        groups[(c.material_id, c.chapter_id, c.figure_id)].append(c)
     hits = []
     for group in groups.values():
         group.sort(key=lambda c: c.position)
@@ -156,6 +160,7 @@ def _runs(cands: list[Candidate]) -> list[SearchHit]:
                     page=run[0].page,
                     text=text,
                     score=best.score,
+                    figure_id=best.figure_id,
                 )
             )
     return hits
@@ -214,6 +219,7 @@ def search(
             position=rows[i].position,
             text=rows[i].text,
             score=score,
+            figure_id=rows[i].figure_id,
         )
         for i, score in fused
     ]

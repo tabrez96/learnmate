@@ -1,6 +1,6 @@
 """Mentor answers: checking citations, the one retry, source lines. Pure."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from typing import Any
 
@@ -29,7 +29,9 @@ def citations_ok(answer: BooksAnswer, retrieved: set[int]) -> bool:
 
 
 def answer_from_books(
-    ask: Callable[[], BooksAnswer], retrieved: set[int]
+    ask: Callable[[], BooksAnswer],
+    retrieved: set[int],
+    figure_ids: Collection[int] = frozenset(),
 ) -> BooksResult:
     """At most two calls: a bad citation or a bad visual gets one retry."""
     fallback: BooksAnswer | None = None
@@ -40,7 +42,7 @@ def answer_from_books(
         if not citations_ok(answer, retrieved):
             continue
         try:
-            visual = parse_visual(answer.visual)
+            visual = parse_visual(answer.visual, figure_ids)
         except VisualError:
             if attempt == 2:
                 return BooksResult(answer, None, 2)

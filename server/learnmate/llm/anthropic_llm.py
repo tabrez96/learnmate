@@ -76,15 +76,16 @@ _PROMPTS: dict[Purpose, str] = {
         "You are a patient tutor answering a student of the given school grade. "
         "Answer only from the passages and list the ids you used. If the passages do "
         "not answer the question, set covered to false, leave text empty and "
-        "passage_ids empty. Use visual only for a simple chart or table that helps, "
-        "otherwise null."
+        "passage_ids empty. Use visual only when it helps, otherwise null: a simple "
+        "chart, steps or table, or, when a passage has a figure_id and the picture is "
+        "the answer, kind figure with that figure_id."
     ),
     "outside": (
         "You are a patient tutor answering a student of the given school grade. The "
         "student's notes did not cover this question, so search the web, prefer "
         "educational sources, answer in a few sentences at the student's level, and "
         "put the URL of the main source in source_url. Use visual only for a simple "
-        "chart or table that helps, otherwise null."
+        "chart or table that helps, otherwise null. Never use kind figure."
     ),
     "questions": (
         "Write exactly the requested number of multiple-choice test questions for a "
@@ -115,7 +116,8 @@ def _passages(passages: list[Passage]) -> str:
     blocks = []
     for p in passages:
         page = f" / page {p.page}" if p.page is not None else ""
-        blocks.append(f"[id {p.id}] {p.material} / {p.chapter}{page}\n{p.text}")
+        figure = f" / figure_id {p.figure_id}" if p.figure_id is not None else ""
+        blocks.append(f"[id {p.id}] {p.material} / {p.chapter}{page}{figure}\n{p.text}")
     return "\n\n".join(blocks)
 
 

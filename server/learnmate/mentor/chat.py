@@ -21,7 +21,7 @@ from learnmate.mentor.answers import (
 )
 from learnmate.mentor.lesson import MentorError
 from learnmate.mentor.visual import VisualError, parse_visual
-from learnmate.models import Chapter, Family, Material, Message, StudySession
+from learnmate.models import Chapter, Family, Figure, Material, Message, StudySession
 from learnmate.rag.embed import Embedder
 from learnmate.rag.search import Reranker, Scope, SearchHit, search, search_query
 from learnmate.sessions import service as sessions
@@ -49,6 +49,16 @@ def _scope(db: Session, row: StudySession) -> Scope:
     return Scope.chapters(chapters) if chapters else Scope.materials(materials)
 
 
+def _scope_figure_ids(db: Session, row: StudySession) -> frozenset[int]:
+    materials, chapters = sessions.scope_ids(db, row)
+    where = (
+        Figure.chapter_id.in_(chapters)
+        if chapters
+        else Figure.material_id.in_(materials)
+    )
+    return frozenset(db.scalars(select(Figure.id).where(where)))
+
+
 def _passages(db: Session, hits: list[SearchHit]) -> dict[int, Passage]:
     material_ids = {h.material_id for h in hits}
     chapter_ids = {h.chapter_id for h in hits if h.chapter_id is not None}
@@ -71,6 +81,7 @@ def _passages(db: Session, hits: list[SearchHit]) -> dict[int, Passage]:
             material=titles.get(h.material_id, ""),
             chapter=names.get(h.chapter_id, ""),
             page=h.page,
+            figure_id=h.figure_id,
         )
         for h in hits
     }
@@ -110,6 +121,7 @@ def _books_message(
                 ).value
             ),
             set(passages),
+            _scope_figure_ids(db, row),
         )
         attempts = result.attempts
     record = retrieval_record(

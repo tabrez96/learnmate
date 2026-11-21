@@ -111,3 +111,18 @@ def test_retrieval_record_shape() -> None:
     assert record["hits"] == [{"passage_id": 4, "chunk_ids": [3, 4], "score": 0.5}]
     assert record["query"] == "q"
     assert record["rerank"] is True
+
+
+def test_answer_from_books_out_of_scope_figure_dropped() -> None:
+    figure = {"kind": "figure", "caption": "c", "alt_text": "a", "figure_id": 9}
+    ask = Script(reply(visual=figure), reply(visual=figure))
+    result = answer_from_books(ask, {1}, {3})
+    assert result.answer is not None
+    assert result.visual is None
+    assert ask.calls == 2
+
+
+def test_answer_from_books_in_scope_figure_kept() -> None:
+    figure = {"kind": "figure", "caption": "c", "alt_text": "a", "figure_id": 3}
+    result = answer_from_books(Script(reply(visual=figure)), {1}, {3})
+    assert result.visual["figure_id"] == 3
