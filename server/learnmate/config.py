@@ -114,8 +114,10 @@ class Settings(BaseSettings):
             )
         if self.pin_wrong_before_fallback > self.pin_max_wrong:
             raise ValueError("pin_wrong_before_fallback must not exceed pin_max_wrong")
-        if self.pin_length < 4:
-            raise ValueError("pin_length must be at least 4")
+        if self.pin_max_wrong < 1:
+            raise ValueError("pin_max_wrong must be at least 1")
+        if not 4 <= self.pin_length <= 12:
+            raise ValueError("pin_length must be between 4 and 12")
         if not 0 < self.llm_budget_alert_fraction < 1:
             raise ValueError("llm_budget_alert_fraction must be between 0 and 1")
         for model in (self.model_main, self.model_fast):

@@ -159,6 +159,17 @@ def test_pin_length_minimum() -> None:
         Settings(pin_length=3)
 
 
+def test_pin_length_maximum_matches_end_request() -> None:
+    assert Settings(pin_length=12).pin_length == 12
+    with pytest.raises(ValidationError):
+        Settings(pin_length=13)
+
+
+def test_pin_max_wrong_at_least_one() -> None:
+    with pytest.raises(ValidationError):
+        Settings(pin_max_wrong=0, pin_wrong_before_fallback=0)
+
+
 @pytest.mark.parametrize("fraction", [0, 1])
 def test_alert_fraction_bounds(fraction: float) -> None:
     with pytest.raises(ValidationError):
