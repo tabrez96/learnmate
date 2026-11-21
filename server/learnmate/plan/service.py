@@ -4,7 +4,7 @@ import datetime as dt
 import json
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from learnmate.clock import Clock
@@ -105,8 +105,18 @@ def get_plan(db: Session, settings: Settings, clock: Clock, session_id: int) -> 
     )
     if row.started_at is not None:
         # Before the start the plan is provisional: the start date may change the test kind.
-        row.plan_json = json.dumps(plan)
+        result = db.execute(
+            update(StudySession)
+            .where(
+                StudySession.id == row.id,
+                or_(StudySession.plan_json.is_(None), StudySession.plan_json == ""),
+            )
+            .values(plan_json=json.dumps(plan))
+        )
         db.commit()
+        if result.rowcount == 0:
+            db.refresh(row)
+            return json.loads(row.plan_json)
     return plan
 
 
@@ -118,14 +128,29 @@ def patch_step(
     key: str,
     status: str,
 ) -> dict:
-    plan = get_plan(db, settings, clock, session_id)
-    row = db.get(StudySession, session_id)
-    if row is None or row.state != "running":
-        raise PlanError(409, "Session is not running")
-    new = set_step_status(plan, key, status)
-    row.plan_json = json.dumps(new)
-    db.commit()
-    return new
+    for _ in range(2):
+        get_plan(db, settings, clock, session_id)
+        row = db.get(StudySession, session_id)
+        if row is None or row.state != "running":
+            raise PlanError(409, "Session is not running")
+        db.refresh(row)
+        old_json = row.plan_json
+        new = set_step_status(json.loads(old_json), key, status)
+        if save_plan(db, session_id, old_json, new):
+            db.commit()
+            return new
+        db.rollback()
+    raise PlanError(409, "The session changed. Try again.")
+
+
+def save_plan(db: Session, session_id: int, old_json: str, new: dict) -> bool:
+    """Compare-and-swap on the stored plan; SQLite has no row locks to lean on."""
+    result = db.execute(
+        update(StudySession)
+        .where(StudySession.id == session_id, StudySession.plan_json == old_json)
+        .values(plan_json=json.dumps(new))
+    )
+    return result.rowcount == 1
 
 
 def completed_days(db: Session, tz: str) -> list[dt.date]:
