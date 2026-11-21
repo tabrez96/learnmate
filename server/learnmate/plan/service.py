@@ -38,7 +38,7 @@ def local_date(at_utc: dt.datetime, tz: str) -> dt.date:
     return at_utc.replace(tzinfo=dt.UTC).astimezone(ZoneInfo(tz)).date()
 
 
-def _topic(db: Session, session_id: int) -> str | None:
+def session_topic(db: Session, session_id: int) -> str | None:
     names = list(
         db.scalars(
             select(Chapter.name)
@@ -98,7 +98,7 @@ def get_plan(db: Session, settings: Settings, clock: Clock, session_id: int) -> 
         PlanInput(
             session_type=row.type,
             question_count=row.question_count,
-            topic=_topic(db, row.id),
+            topic=session_topic(db, row.id),
             first_of_week=_first_of_week(db, settings, row, ref),
             exam_date=exam_in_window(today, exam_dates),
         )

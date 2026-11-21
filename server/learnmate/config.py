@@ -8,6 +8,8 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from learnmate.models import GRADE_BANDS
+
 
 class ModelPrice(BaseModel):
     """USD per million tokens."""
@@ -86,13 +88,15 @@ class Settings(BaseSettings):
     inactivity_lock_seconds: int = 300
 
     # Grade bands: lowest percentage for each band, highest band first.
-    grade_bands: dict[str, int] = {"A": 90, "B": 80, "C": 70, "D": 60, "F": 0}
+    grade_bands: dict[str, int] = {"A": 90, "B": 80, "C": 70, "D": 60, "E": 50, "F": 0}
 
     @field_validator("grade_bands")
     @classmethod
     def _check_grade_bands(cls, bands: dict[str, int]) -> dict[str, int]:
         if not bands:
             raise ValueError("grade_bands must not be empty")
+        if any(band not in GRADE_BANDS for band in bands):
+            raise ValueError(f"grade_bands keys must be among {', '.join(GRADE_BANDS)}")
         values = list(bands.values())
         if any(not 0 <= v <= 100 for v in values):
             raise ValueError("grade_bands values must be between 0 and 100")
