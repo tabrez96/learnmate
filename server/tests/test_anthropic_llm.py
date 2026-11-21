@@ -301,6 +301,16 @@ def test_passages_and_history_rendered(settings: Settings) -> None:
     assert "student: hi" in text
 
 
+def test_passage_figure_id_rendered(settings: Settings) -> None:
+    llm, client = make(settings, reply(CASES[4][2].model_dump_json()))
+    pic = passage(9)
+    pic.figure_id = 5
+    llm.answer_from_passages("q", history=[], passages=[pic, passage(8)], grade=6)
+    text = client.messages.requests[0]["messages"][0]["content"]
+    assert "[id 9] Book / Ch 1 / figure_id 5\ntext 9" in text
+    assert "[id 8] Book / Ch 1\ntext 8" in text
+
+
 def test_chapters_hint_and_page_markers(settings: Settings) -> None:
     llm, client = make(settings, reply(CASES[1][2].model_dump_json()))
     llm.detect_chapters(["a", "b"], hint="H")

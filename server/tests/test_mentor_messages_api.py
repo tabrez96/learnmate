@@ -8,7 +8,7 @@ from learnmate.api.family import FAMILY_ID
 from learnmate.llm.fake import FakeLlm
 from learnmate.llm.types import BooksAnswer
 from learnmate.mentor import chat
-from learnmate.models import Chunk, Family, Message
+from learnmate.models import Chunk, Family, Figure, Material, Message, Subject
 from learnmate.rag.search import SearchHit
 from tests.test_mentor_api import API, BAD, _exhaust_budget, _setup
 
@@ -228,3 +228,59 @@ def test_get_messages_in_order(client, monkeypatch) -> None:
 def test_get_works_when_session_not_running(client, monkeypatch) -> None:
     session_id, _, _ = _prepare(client, monkeypatch, state="set_up")
     assert client.get(_url(session_id)).json() == []
+
+
+def _figure_visual(figure_id: int) -> dict:
+    return {
+        "kind": "figure",
+        "figure_id": figure_id,
+        "caption": "Root",
+        "alt_text": "A drawing of a root",
+    }
+
+
+def _add_figure(client: TestClient, chunk_id: int | None, *, other: bool) -> int:
+    with client.app.state.session_factory() as db:
+        if other:
+            subject = Subject(name="Maths", icon="calc")
+            db.add(subject)
+            db.flush()
+            material = Material(subject_id=subject.id, title="Sums", kind="upload")
+            db.add(material)
+            db.flush()
+            material_id, chapter_id = material.id, None
+        else:
+            chunk = db.get(Chunk, chunk_id)
+            material_id, chapter_id = chunk.material_id, chunk.chapter_id
+        figure = Figure(
+            material_id=material_id,
+            chapter_id=chapter_id,
+            page=1,
+            path=f"{material_id}/fig-001-1.png",
+            description="A root",
+        )
+        db.add(figure)
+        db.commit()
+        return figure.id
+
+
+def test_books_answer_with_scope_figure_keeps_visual(client, monkeypatch) -> None:
+    session_id, ids, llm = _prepare(client, monkeypatch)
+    figure_id = _add_figure(client, ids["Roots"][0], other=False)
+    llm.replies = [_ok([ids["Roots"][1]], visual=_figure_visual(figure_id))]
+    r = client.post(_url(session_id), json={"text": "Show a root"})
+    visual = r.json()["answer"]["visual"]
+    assert (visual["kind"], visual["figure_id"]) == ("figure", figure_id)
+
+
+def test_books_answer_with_figure_outside_scope_has_no_visual(
+    client, monkeypatch
+) -> None:
+    session_id, ids, llm = _prepare(client, monkeypatch)
+    figure_id = _add_figure(client, None, other=True)
+    reply = _ok([ids["Roots"][1]], visual=_figure_visual(figure_id))
+    llm.replies = [reply, reply]
+    r = client.post(_url(session_id), json={"text": "Show a root"})
+    answer = r.json()["answer"]
+    assert answer["text"] == "Roots drink."
+    assert answer["visual"] is None

@@ -5,7 +5,7 @@ import pytest
 
 from learnmate.llm.fake import FakeLlm
 from learnmate.llm.types import LlmUnavailableError, SearchQuery, Turn, Usage
-from learnmate.models import Chapter, Chunk, Material, Subject
+from learnmate.models import Chapter, Chunk, Figure, Material, Subject
 from learnmate.rag.embed import encode
 from learnmate.rag.search import (
     Candidate,
@@ -66,6 +66,32 @@ def add(db, material, chapter, position, text, embed=True):
     db.add(row)
     db.flush()
     return row.id
+
+
+def add_figure(db, material, chapter, position, description):
+    figure = Figure(
+        material_id=material.id,
+        chapter_id=chapter.id,
+        page=position,
+        path=f"{material.id}/fig-{position}.png",
+        description=description,
+    )
+    db.add(figure)
+    db.flush()
+    row = Chunk(
+        material_id=material.id,
+        chapter_id=chapter.id,
+        page=position,
+        position=position,
+        kind="figure",
+        figure_id=figure.id,
+        text=description,
+        embedding=encode(EMB, [description])[0],
+        embed_model="word",
+    )
+    db.add(row)
+    db.flush()
+    return figure.id
 
 
 def cand(id, position, score=0.5, text="text", chapter=1, material=1):
@@ -267,3 +293,23 @@ def test_search_uses_given_floor(db, world):
     scope = Scope.chapters([w["ch1"].id])
     assert len(search(db, EMB, scope, "houseplant")) == 1
     assert search(db, EMB, scope, "houseplant", min_similarity=1.01) == []
+
+
+def test_scoped_search_finds_figure_chunk(db, world):
+    w = world
+    figure_id = add_figure(
+        db, w["plants"], w["ch1"], 1, "Diagram of a leaf cross section"
+    )
+    add_figure(db, w["rivers"], w["geo"], 1, "Diagram of a river leaf cross section")
+    hits = search(db, EMB, Scope.chapters([w["ch1"].id]), "leaf cross section")
+    assert [h.figure_id for h in hits] == [figure_id]
+    assert search(db, EMB, Scope.chapters([w["ch2"].id]), "leaf cross section") == []
+
+
+def test_figure_chunk_not_merged_with_neighbour_text(db, world):
+    w = world
+    add(db, w["plants"], w["ch1"], 0, "A plant leaf makes food.")
+    figure_id = add_figure(db, w["plants"], w["ch1"], 1, "Diagram of a plant leaf")
+    hits = search(db, EMB, Scope.chapters([w["ch1"].id]), "plant leaf")
+    assert len(hits) == 2
+    assert sorted(h.figure_id or 0 for h in hits) == [0, figure_id]

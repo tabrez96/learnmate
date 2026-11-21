@@ -79,3 +79,17 @@ def test_visual_limits() -> None:
     for raw in bad:
         with pytest.raises(VisualError):
             parse_visual(raw)
+
+
+FIGURE = {**BASE, "kind": "figure", "figure_id": 3}
+
+
+def test_figure_visual_in_scope_accepted() -> None:
+    assert parse_visual(FIGURE, figure_ids={3}) == FIGURE
+
+
+def test_figure_visual_outside_scope_rejected() -> None:
+    with pytest.raises(VisualError):
+        parse_visual(FIGURE, figure_ids={4})
+    with pytest.raises(VisualError):
+        parse_visual(FIGURE)

@@ -37,6 +37,7 @@ def _scope_chunks(db: Session, row: StudySession) -> list[ScopeChunk]:
         .join(Material, Chunk.material_id == Material.id)
         .outerjoin(Chapter, Chunk.chapter_id == Chapter.id)
     )
+    query = query.where(Chunk.kind == "text")
     if chapters:
         query = query.where(Chunk.chapter_id.in_(chapters))
     else:

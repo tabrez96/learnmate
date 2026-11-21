@@ -1,9 +1,11 @@
 import shutil
 from collections.abc import Callable
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pytest
+from PIL import Image, ImageDraw
 from sqlalchemy import func, select, text
 
 from learnmate.db import make_session_factory
@@ -19,6 +21,8 @@ from learnmate.llm.fake import FakeLlm
 from learnmate.llm.types import (
     ChapterGuess,
     ChapterList,
+    FigureBox,
+    FigureList,
     LlmResult,
     LlmUnavailableError,
     PageText,
@@ -27,6 +31,7 @@ from learnmate.llm.types import (
 from learnmate.models import (
     Chapter,
     Chunk,
+    Figure,
     Material,
     MaterialFile,
     MaterialPage,
@@ -42,6 +47,7 @@ MIMES = {
     ".pdf": "application/pdf",
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".jpg": "image/jpeg",
+    ".png": "image/png",
 }
 DAMAGED_PDF = b"%PDF-1.4\n" + b"\x00junk" * 50
 
@@ -55,6 +61,8 @@ class ScriptedLlm(FakeLlm):
         page_text: str | None = None,
         fail_read: bool = False,
         fail_chapters: bool = False,
+        figures: list[FigureBox] | None = None,
+        fail_figures: bool = False,
         on_read: Callable[[], None] | None = None,
     ) -> None:
         super().__init__(settings)
@@ -62,6 +70,8 @@ class ScriptedLlm(FakeLlm):
         self.page_text = page_text
         self.fail_read = fail_read
         self.fail_chapters = fail_chapters
+        self.figures = figures or []
+        self.fail_figures = fail_figures
         self.on_read = on_read
 
     def read_page(self, image, media_type):
@@ -73,6 +83,12 @@ class ScriptedLlm(FakeLlm):
         if self.page_text is None:
             return result
         return LlmResult(PageText(text=self.page_text), result.usage)
+
+    def find_figures(self, image, media_type):
+        result = super().find_figures(image, media_type)
+        if self.fail_figures:
+            raise LlmUnavailableError("down", Usage("m", "figures"))
+        return LlmResult(FigureList(figures=self.figures), result.usage)
 
     def detect_chapters(self, pages, *, hint=None):
         if self.fail_chapters:
@@ -487,3 +503,87 @@ def test_embedder_failure_ends_failed(make_material, run, sessions, settings):
     assert material.status == "failed"
     assert material.error == UNEXPECTED_MESSAGE
     assert _chunks(sessions, material.id) == []
+
+
+DRAWING = "A leaf cross section with labels."
+
+
+def _drawing_page() -> bytes:
+    img = Image.new("RGB", (800, 1000), "white")
+    ImageDraw.Draw(img).rectangle((200, 200, 600, 500), fill="black")
+    out = BytesIO()
+    img.save(out, format="PNG")
+    return out.getvalue()
+
+
+def _drawing_llm(settings, **kw) -> ScriptedLlm:
+    box = FigureBox(description=DRAWING, box=[0.25, 0.2, 0.75, 0.5])
+    return ScriptedLlm(settings, figures=[box], **kw)
+
+
+def test_photo_with_drawing_yields_figure_crop_and_chunk(
+    make_material, run, sessions, settings
+):
+    llm = _drawing_llm(settings)
+    material, _, chapters = run(make_material([(".png", _drawing_page())]), llm)
+    assert material.status == "ready"
+    assert llm.calls == ["read_page", "figures", "chapters"]
+    with sessions() as db:
+        figure = db.scalars(select(Figure)).one()
+        chunks = list(db.scalars(select(Chunk).order_by(Chunk.position)))
+    assert (figure.description, figure.page) == (DRAWING, 1)
+    assert figure.chapter_id == chapters[0].id
+    assert figure.path.startswith(f"{material.id}/fig-")
+    png = settings.data_dir / "files" / figure.path
+    with Image.open(png) as crop:
+        assert crop.format == "PNG"
+        assert abs(crop.width - 400) <= 4 and abs(crop.height - 300) <= 4
+    fig_chunk = chunks[-1]
+    assert (fig_chunk.kind, fig_chunk.figure_id) == ("figure", figure.id)
+    assert fig_chunk.text == DRAWING and fig_chunk.embedding is not None
+    assert all(c.position < fig_chunk.position for c in chunks[:-1])
+    assert len(chunks) > 1
+
+
+def test_typed_pdf_does_not_ask_for_figures(make_material, run, settings):
+    llm = _drawing_llm(settings)
+    run(make_material(["typed.pdf"]), llm)
+    assert "figures" not in llm.calls
+
+
+def test_figure_llm_error_still_ready(make_material, run, sessions, settings):
+    llm = _drawing_llm(settings, fail_figures=True)
+    material, _, _ = run(make_material([(".png", _drawing_page())]), llm)
+    assert material.status == "ready"
+    with sessions() as db:
+        assert db.scalar(select(func.count(Figure.id))) == 0
+
+
+def test_failed_ingest_removes_figures(make_material, run, sessions, settings):
+    llm = _drawing_llm(settings, fail_chapters=True)
+    mid = make_material([(".png", _drawing_page())])
+    material, _, _ = run(mid, llm)
+    assert material.status == "failed"
+    folder = settings.data_dir / "files" / str(mid)
+    assert list(folder.glob("fig-*.png")) == []
+    assert (folder / "01.png").exists()
+    with sessions() as db:
+        assert db.scalar(select(func.count(Figure.id))) == 0
+        assert db.scalar(select(func.count(Chunk.id))) == 0
+
+
+def test_figure_call_is_budget_checked(make_material, run, settings, monkeypatch):
+    from learnmate.ingest import pipeline
+
+    calls = []
+
+    def check(*args):
+        calls.append(1)
+        if len(calls) == 3:  # start, before read_page, before figures
+            raise pipeline.IngestFailed(REACHED_MESSAGE)
+
+    monkeypatch.setattr(pipeline, "_check_budget", check)
+    llm = _drawing_llm(settings)
+    material, _, _ = run(make_material([(".png", _drawing_page())]), llm)
+    assert material.status == "failed"
+    assert llm.calls == ["read_page"]

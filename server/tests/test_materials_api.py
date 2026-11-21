@@ -291,3 +291,18 @@ def test_resolve_stored_rejects_escape(settings):
     assert resolve_stored(settings.data_dir, "1/a.png").name == "a.png"
     with pytest.raises(ValueError):
         resolve_stored(settings.data_dir, "../learnmate.db")
+
+
+def test_delete_material_removes_figure_file_and_endpoint_404s(
+    client, app, settings, subject_id
+):
+    mid = _upload(client, subject_id, [_pdf()]).json()["id"]
+    path = settings.data_dir / "files" / str(mid) / "fig-001-1.png"
+    path.write_bytes(PNG)
+    fid = _figure(app, mid, f"{mid}/fig-001-1.png")
+    r = client.get(f"/api/v1/figures/{fid}")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    assert client.delete(f"/api/v1/materials/{mid}").status_code == 204
+    assert client.get(f"/api/v1/figures/{fid}").status_code == 404
+    assert not path.exists()

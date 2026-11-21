@@ -1,6 +1,7 @@
-"""The visual block of a mentor answer: a chart, a step diagram or a table, validated."""
+"""The visual block of a mentor answer: a chart, a step diagram, a table or a figure from the notes, validated."""
 
 import json
+from collections.abc import Collection
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -56,8 +57,13 @@ class TableVisual(_VisualBase):
         return self
 
 
+class FigureVisual(_VisualBase):
+    kind: Literal["figure"]
+    figure_id: int = Field(ge=1)
+
+
 type Visual = Annotated[
-    ChartVisual | StepsVisual | TableVisual, Field(discriminator="kind")
+    ChartVisual | StepsVisual | TableVisual | FigureVisual, Field(discriminator="kind")
 ]
 VISUAL_ADAPTER: TypeAdapter[Visual] = TypeAdapter(Visual)
 VISUAL_SCHEMA = json.dumps(VISUAL_ADAPTER.json_schema())
@@ -66,11 +72,19 @@ VISUAL_SCHEMA = json.dumps(VISUAL_ADAPTER.json_schema())
 class VisualError(ValueError): ...
 
 
-def parse_visual(raw: dict[str, Any] | None) -> dict[str, Any] | None:
-    """None stays None; a valid visual comes back normalised; anything else raises."""
+def parse_visual(
+    raw: dict[str, Any] | None, figure_ids: Collection[int] = frozenset()
+) -> dict[str, Any] | None:
+    """None stays None; a valid visual comes back normalised; anything else raises.
+
+    A figure must be one of figure_ids.
+    """
     if raw is None:
         return None
     try:
-        return VISUAL_ADAPTER.validate_python(raw).model_dump()
+        visual = VISUAL_ADAPTER.validate_python(raw).model_dump()
     except ValidationError as e:
         raise VisualError(str(e)) from e
+    if visual["kind"] == "figure" and visual["figure_id"] not in figure_ids:
+        raise VisualError("figure is outside the session's scope")
+    return visual
