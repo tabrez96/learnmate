@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 WARMUP_POINTS = 10
+CHALLENGE_POINTS_PER_CORRECT = 10
 QUICK_CHECK_POINTS = 10
 TEST_POINTS_PER_CORRECT = 20
 TEST_POINTS_MAX = 100
@@ -31,6 +32,8 @@ BADGES = (
     ("streak_30", "30-day streak"),
     ("perfect_test", "Perfect test"),
     ("level_5", "Scholar"),
+    ("first_challenge", "First challenge"),
+    ("challenges_10", "10 challenges"),
 )
 
 
@@ -100,7 +103,12 @@ def best_streak(days: Iterable[dt.date]) -> int:
 
 
 def earned_badges(
-    *, completed_sessions: int, best_streak: int, perfect_tests: int, points: int
+    *,
+    completed_sessions: int,
+    best_streak: int,
+    perfect_tests: int,
+    points: int,
+    completed_challenges: int = 0,
 ) -> list[str]:
     met = {
         "first_session": completed_sessions >= 1,
@@ -111,5 +119,7 @@ def earned_badges(
         "streak_30": best_streak >= 30,
         "perfect_test": perfect_tests >= 1,
         "level_5": level_for(points).number >= 5,
+        "first_challenge": completed_challenges >= 1,
+        "challenges_10": completed_challenges >= 10,
     }
     return [badge_id for badge_id, _ in BADGES if met[badge_id]]

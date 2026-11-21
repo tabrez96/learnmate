@@ -79,6 +79,20 @@ def test_badges() -> None:
     assert earned_badges(**{**none, "perfect_tests": 1}) == ["perfect_test"]
     assert earned_badges(**{**none, "points": 800}) == ["level_5"]
     everything = earned_badges(
-        completed_sessions=50, best_streak=30, perfect_tests=1, points=900
+        completed_sessions=50,
+        best_streak=30,
+        perfect_tests=1,
+        points=900,
+        completed_challenges=10,
     )
     assert everything == [badge_id for badge_id, _ in BADGES]
+
+
+def test_challenge_badges() -> None:
+    none = {"completed_sessions": 0, "best_streak": 0, "perfect_tests": 0, "points": 0}
+    assert earned_badges(**none, completed_challenges=0) == []
+    assert earned_badges(**none, completed_challenges=1) == ["first_challenge"]
+    assert earned_badges(**none, completed_challenges=10) == [
+        "first_challenge",
+        "challenges_10",
+    ]

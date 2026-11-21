@@ -51,6 +51,7 @@ class ProgressOut(BaseModel):
     level: LevelOut
     badges: list[str]
     badge_count: int
+    completed_challenges: int
 
 
 def _out(session_id: int, plan: dict) -> PlanOut:
