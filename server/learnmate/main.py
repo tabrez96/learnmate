@@ -26,6 +26,7 @@ from learnmate.llm.budget import BudgetReached
 from learnmate.llm.metered import MeteredLlm
 from learnmate.rag.embed import make_embedder
 from learnmate.rag.reindex import reindex
+from learnmate.rag.rerank import make_reranker
 from learnmate.sessions.pins import load_pin_cipher
 from learnmate.sessions.service import telegram_new_pin
 from learnmate.telegram.bot import make_telegram_runner
@@ -68,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         make_llm(settings), app.state.session_factory, settings, clock
     )
     app.state.embedder = make_embedder(settings)
+    app.state.reranker = make_reranker(settings)
     hooks = TelegramHooks()
     hooks.new_pin = partial(
         telegram_new_pin, settings=settings, clock=clock, cipher=pin_cipher

@@ -321,3 +321,32 @@ def test_satisfies_protocol(settings: Settings) -> None:
         StubClient(reply(PageText(text="x").model_dump_json())), settings
     )
     assert llm.read_page(b"img", "image/png").value.text == "x"
+
+
+def test_answer_system_prompt_has_visual_schema(settings: Settings) -> None:
+    prompts = {}
+    for purpose, call, value in (
+        (
+            "answer",
+            "answer_from_passages",
+            BooksAnswer(covered=True, text="t", passage_ids=[1]),
+        ),
+        (
+            "outside",
+            "answer_outside",
+            OutsideAnswer(text="t", source_url="https://x.org"),
+        ),
+        ("lesson", "build_lesson", CASES[3][2]),
+    ):
+        llm, client = make(settings, reply(value.model_dump_json()))
+        kwargs = {"history": [], "grade": 6}
+        if purpose == "answer":
+            kwargs["passages"] = [passage(1)]
+        if purpose == "lesson":
+            getattr(llm, call)("t", passages=[passage(1)], grade=6)
+        else:
+            getattr(llm, call)("q", **kwargs)
+        prompts[purpose] = client.messages.requests[0]["system"]
+    assert "chart_type" in prompts["answer"]
+    assert "chart_type" in prompts["outside"]
+    assert "chart_type" not in prompts["lesson"]

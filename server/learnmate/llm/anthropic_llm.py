@@ -26,6 +26,7 @@ from learnmate.llm.types import (
     Usage,
     model_for,
 )
+from learnmate.mentor.visual import VISUAL_SCHEMA
 
 
 def make_client(api_key: str) -> Any:
@@ -101,10 +102,13 @@ _PROMPTS: dict[Purpose, str] = {
 
 def _system(purpose: Purpose, output: type[BaseModel]) -> str:
     schema = json.dumps(output.model_json_schema())
-    return (
+    system = (
         f"{_PROMPTS[purpose]}\n\nReply with only one JSON object that matches this "
         f"JSON schema, with no other text:\n{schema}"
     )
+    if purpose in ("answer", "outside"):
+        system += f"\n\nWhen visual is not null it must match this JSON schema:\n{VISUAL_SCHEMA}"
+    return system
 
 
 def _passages(passages: list[Passage]) -> str:
