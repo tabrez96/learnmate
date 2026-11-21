@@ -27,7 +27,7 @@ def test_defaults() -> None:
     assert s.fallback_lockout_seconds == 3600
     assert s.inactivity_warn_seconds == 240
     assert s.inactivity_lock_seconds == 300
-    assert s.grade_bands == {"A": 90, "B": 80, "C": 70, "D": 60, "F": 0}
+    assert s.grade_bands == {"A": 90, "B": 80, "C": 70, "D": 60, "E": 50, "F": 0}
     assert s.model_main == "claude-sonnet-5-5"
     assert s.model_fast == "claude-haiku-4-5-20251001"
     assert s.embed_model == "BAAI/bge-small-en-v1.5"
@@ -129,6 +129,7 @@ def test_get_settings_is_cached() -> None:
         {"A": 50, "B": 80, "F": 0},
         {"A": 90, "B": 90, "F": 0},
         {"A": 120, "F": 0},
+        {"A": 90, "Z": 0},
         {},
     ],
 )

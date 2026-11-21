@@ -30,7 +30,7 @@ from learnmate.rag.search import Scope, search
 from learnmate.sessions import service as sessions
 
 
-def _scope_chunks(db: Session, row: StudySession) -> list[ScopeChunk]:
+def scope_chunks(db: Session, row: StudySession) -> list[ScopeChunk]:
     materials, chapters = sessions.scope_ids(db, row)
     query = (
         select(Chunk, Material.title, Chapter.name)
@@ -59,7 +59,7 @@ def _scope_chunks(db: Session, row: StudySession) -> list[ScopeChunk]:
     ]
 
 
-def _retriever(db: Session, settings: Settings, embedder: Embedder) -> Retrieve:
+def retriever(db: Session, settings: Settings, embedder: Embedder) -> Retrieve:
     def retrieve(key: ChapterKey, query: str) -> list[int]:
         material_id, chapter_id = key
         scope = (
@@ -114,9 +114,7 @@ def start_lesson(
     family = db.get(Family, FAMILY_ID)
     if family is None:
         raise MentorError(409, "Family not set up")
-    passages = select_passages(
-        _scope_chunks(db, row), _retriever(db, settings, embedder)
-    )
+    passages = select_passages(scope_chunks(db, row), retriever(db, settings, embedder))
     if not passages:
         raise MentorError(422, "There's no material to teach from yet")
     topic = step.get("topic") or "today's topic"
