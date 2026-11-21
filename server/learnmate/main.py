@@ -12,6 +12,7 @@ from learnmate.api import (
     exams,
     family,
     materials,
+    mentor,
     plan,
     sessions,
     subjects,
@@ -83,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(materials.router)
     app.include_router(sessions.router)
     app.include_router(plan.router)
+    app.include_router(mentor.router)
     app.include_router(exams.router)
     app.include_router(budget.router)
     app.add_exception_handler(BudgetReached, budget.budget_reached_handler)
