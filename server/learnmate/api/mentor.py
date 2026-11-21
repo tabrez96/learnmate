@@ -1,11 +1,17 @@
 """The mentor's lesson and its quick checks."""
 
+import datetime as dt
+import json
+from typing import Annotated, Any, Literal
+
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from learnmate.api.deps import AppSettings, DbSession
-from learnmate.mentor import service
+from learnmate.api.family import FAMILY_ID
+from learnmate.mentor import chat, service
 from learnmate.mentor.lesson import MentorError, lesson_step
+from learnmate.models import Family, Message
 from learnmate.plan.progress import QUICK_CHECK_POINTS
 from learnmate.plan.rules import PlanError
 
@@ -112,3 +118,80 @@ def answer_check(
         explanation=check["explanation"],
         points_awarded=QUICK_CHECK_POINTS if correct else 0,
     )
+
+
+class MessageIn(BaseModel):
+    text: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)
+    ]
+    mode: Literal["books", "outside"] = "books"
+
+
+class MessageOut(BaseModel):
+    id: int
+    role: Literal["mentor", "student"]
+    text: str
+    sources: list[SourceOut]
+    visual: dict[str, Any] | None
+    outside: bool
+    source_url: str | None
+    can_check_outside: bool
+    created_at: dt.datetime
+
+
+class PostMessageOut(BaseModel):
+    question: MessageOut
+    answer: MessageOut
+
+
+def _message_out(message: Message, family: Family | None) -> MessageOut:
+    return MessageOut(
+        id=message.id,
+        role=message.role,  # type: ignore[arg-type]
+        text=message.text,
+        sources=json.loads(message.sources_json or "[]"),
+        visual=json.loads(message.visual_json) if message.visual_json else None,
+        outside=message.outside,
+        source_url=message.outside_source_url,
+        can_check_outside=chat.can_check_outside(message, family),
+        created_at=message.created_at,
+    )
+
+
+@router.post("/sessions/{session_id}/mentor/messages")
+def post_message(
+    session_id: int,
+    body: MessageIn,
+    request: Request,
+    db: DbSession,
+    settings: AppSettings,
+) -> PostMessageOut:
+    state = request.app.state
+    try:
+        student, mentor = chat.post_message(
+            db,
+            settings,
+            state.clock,
+            state.llm,
+            state.embedder,
+            state.reranker,
+            session_id,
+            body.text,
+            body.mode,
+        )
+    except (MentorError, PlanError) as e:
+        raise HTTPException(e.status, e.detail) from e
+    family = db.get(Family, FAMILY_ID)
+    return PostMessageOut(
+        question=_message_out(student, family), answer=_message_out(mentor, family)
+    )
+
+
+@router.get("/sessions/{session_id}/mentor/messages")
+def get_messages(session_id: int, db: DbSession) -> list[MessageOut]:
+    try:
+        messages = chat.list_messages(db, session_id)
+    except MentorError as e:
+        raise HTTPException(e.status, e.detail) from e
+    family = db.get(Family, FAMILY_ID)
+    return [_message_out(m, family) for m in messages]
