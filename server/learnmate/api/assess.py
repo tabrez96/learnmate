@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from learnmate.api.deps import AppSettings, DbSession
 from learnmate.assess import service
 from learnmate.assess.rules import AssessError
+from learnmate.challenges.rules import challenge_points
 from learnmate.models import Question, StudyTest
 from learnmate.plan.progress import test_points
 from learnmate.plan.rules import PlanError
@@ -72,6 +73,8 @@ def _right(questions: list[Question]) -> int:
 
 
 def _points(test: StudyTest, questions: list[Question]) -> int:
+    if not test.graded:
+        return challenge_points(_right(questions))
     return test_points(_right(questions), double_points=test.kind == "surprise")
 
 
@@ -80,7 +83,7 @@ def _source(sources: dict[int, dict], question: Question) -> SourceOut | None:
     return SourceOut(**found) if found else None
 
 
-def _test_out(db: DbSession, test: StudyTest) -> TestOut:
+def test_out(db: DbSession, test: StudyTest) -> TestOut:
     questions = service.questions_of(db, test.id)
     sources = service.sources_of(db, [q.chunk_id for q in questions if q.chunk_id])
     out = []
@@ -132,7 +135,7 @@ def create_test(
         )
     except (AssessError, PlanError) as e:
         raise HTTPException(e.status, e.detail) from e
-    return _test_out(db, test)
+    return test_out(db, test)
 
 
 @router.get("/tests/{test_id}")
@@ -141,7 +144,7 @@ def get_test(test_id: int, db: DbSession) -> TestOut:
         test = service.get_test(db, test_id)
     except AssessError as e:
         raise HTTPException(e.status, e.detail) from e
-    return _test_out(db, test)
+    return test_out(db, test)
 
 
 @router.post("/tests/{test_id}/answers")
@@ -166,7 +169,7 @@ def post_answer(
     q = result.question
     test = service.get_test(db, test_id)
     sources = service.sources_of(db, [q.chunk_id] if q.chunk_id else [])
-    out = _test_out(db, test)
+    out = test_out(db, test)
     return TestAnswerOut(
         correct=q.answer_index == q.correct_index,
         correct_index=q.correct_index,

@@ -8,11 +8,13 @@ from sqlalchemy.orm import Session
 
 from learnmate.api.family import FAMILY_ID
 from learnmate.assess import rules
+from learnmate.challenges import rules as challenge_rules
 from learnmate.clock import Clock
 from learnmate.config import Settings
-from learnmate.llm.types import Llm, LlmError
+from learnmate.llm.types import Llm, LlmError, Passage
+from learnmate.llm.types import Question as LlmQuestion
 from learnmate.mentor import service as mentor_service
-from learnmate.mentor.lesson import select_passages
+from learnmate.mentor.lesson import ScopeChunk, select_passages
 from learnmate.models import (
     Chapter,
     Chunk,
@@ -43,6 +45,53 @@ def _existing(db: Session, session_id: int, kind: str) -> StudyTest | None:
     ).first()
 
 
+def make_questions(
+    llm: Llm,
+    scope: list[ScopeChunk],
+    passages: list[Passage],
+    count: int,
+    grade: int,
+) -> list[LlmQuestion]:
+    allowed = {p.id for p in passages}
+    chapter_of = {c.id: c.key for c in scope}
+    kept: list = []
+    seen: set[str] = set()
+    # No budget check: a running session must be able to finish with its test.
+    try:
+        for _ in range(rules.GENERATE_ATTEMPTS):
+            missing = count - len(kept)
+            if missing <= 0:
+                break
+            result = llm.generate_questions(
+                passages=passages,
+                count=missing if kept else count,
+                grade=grade,
+            ).value
+            kept += rules.valid_questions(result.questions, allowed, seen)
+    except LlmError as e:
+        raise rules.AssessError(502, "The test couldn't be made. Try again.") from e
+    if len(kept) < count:
+        raise rules.AssessError(
+            502, "The test couldn't be made from your material. Try again."
+        )
+    return rules.spread(kept, chapter_of, count)
+
+
+def store_questions(db: Session, test: StudyTest, chosen: list[LlmQuestion]) -> None:
+    for i, q in enumerate(chosen):
+        db.add(
+            Question(
+                test_id=test.id,
+                position=i,
+                prompt=q.prompt,
+                options_json=json.dumps(q.options),
+                correct_index=q.correct_index,
+                explanation=q.explanation,
+                chunk_id=q.passage_id,
+            )
+        )
+
+
 def create_test(
     db: Session,
     settings: Settings,
@@ -71,29 +120,7 @@ def create_test(
     passages = select_passages(scope, mentor_service.retriever(db, settings, embedder))
     if not passages:
         raise rules.AssessError(422, "There's no material to test from yet")
-    allowed = {p.id for p in passages}
-    chapter_of = {c.id: c.key for c in scope}
-    kept: list = []
-    seen: set[str] = set()
-    # No budget check: a running session must be able to finish with its test.
-    try:
-        for _ in range(rules.GENERATE_ATTEMPTS):
-            missing = spec.count - len(kept)
-            if missing <= 0:
-                break
-            result = llm.generate_questions(
-                passages=passages,
-                count=missing if kept else spec.count,
-                grade=family.grade,
-            ).value
-            kept += rules.valid_questions(result.questions, allowed, seen)
-    except LlmError as e:
-        raise rules.AssessError(502, "The test couldn't be made. Try again.") from e
-    if len(kept) < spec.count:
-        raise rules.AssessError(
-            502, "The test couldn't be made from your material. Try again."
-        )
-    chosen = rules.spread(kept, chapter_of, spec.count)
+    chosen = make_questions(llm, scope, passages, spec.count, family.grade)
     existing = _existing(db, session_id, spec.kind)  # a parallel request may have won
     if existing is not None:
         return existing
@@ -102,18 +129,7 @@ def create_test(
     )
     db.add(test)
     db.flush()
-    for i, q in enumerate(chosen):
-        db.add(
-            Question(
-                test_id=test.id,
-                position=i,
-                prompt=q.prompt,
-                options_json=json.dumps(q.options),
-                correct_index=q.correct_index,
-                explanation=q.explanation,
-                chunk_id=q.passage_id,
-            )
-        )
+    store_questions(db, test, chosen)
     db.commit()
     return test
 
@@ -202,7 +218,10 @@ def answer(
     finished = position + 1 == total
     if finished:
         db.refresh(test)
-        _grade(db, settings, clock, test)
+        if test.graded:
+            _grade(db, settings, clock, test)
+        else:
+            _finish_ungraded(db, clock, test)
     db.commit()
     db.refresh(test)
     return AnswerResult(question, finished)
@@ -250,3 +269,25 @@ def _grade(db: Session, settings: Settings, clock: Clock, test: StudyTest) -> No
                     studied,
                 ),
             )
+
+
+def _finish_ungraded(db: Session, clock: Clock, test: StudyTest) -> None:
+    db.flush()
+    questions = questions_of(db, test.id)
+    right = sum(q.answer_index == q.correct_index for q in questions)
+    test.score_pct = rules.score_pct(right, len(questions))  # history only: no band
+    test.status = "done"
+    test.finished_at = clock.now()
+    row = db.get(StudySession, test.session_id) if test.session_id else None
+    if row is None:
+        return
+    amount = challenge_rules.challenge_points(right)
+    if amount > 0:
+        db.add(Points(session_id=row.id, reason=test.kind, amount=amount))
+    if test.kind == "warmup" and row.plan_json:
+        plan = json.loads(row.plan_json)
+        step = next((s for s in plan["steps"] if s["key"] == "warmup"), None)
+        if step is not None and step["status"] == "pending":
+            new = set_step_status(plan, "warmup", "done")
+            if not plan_service.save_plan(db, row.id, row.plan_json, new):
+                raise rules.AssessError(409, "The session changed. Try again.")

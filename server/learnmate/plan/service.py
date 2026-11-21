@@ -176,6 +176,18 @@ def progress(db: Session, settings: Settings, clock: Clock) -> dict:
             StudyTest.score_pct == 100,
         )
     )
+    challenges = (
+        db.scalar(
+            select(func.count())
+            .select_from(StudyTest)
+            .where(
+                StudyTest.graded.is_(False),
+                StudyTest.status == "done",
+                StudyTest.kind.in_(("warmup", "challenge", "bonus")),
+            )
+        )
+        or 0
+    )
     level = level_for(points)
     best = best_streak(days)
     badges = earned_badges(
@@ -183,6 +195,7 @@ def progress(db: Session, settings: Settings, clock: Clock) -> dict:
         best_streak=best,
         perfect_tests=perfect or 0,
         points=points,
+        completed_challenges=challenges,
     )
     return {
         "points": points,
@@ -199,4 +212,5 @@ def progress(db: Session, settings: Settings, clock: Clock) -> dict:
         },
         "badges": badges,
         "badge_count": len(badges),
+        "completed_challenges": challenges,
     }
