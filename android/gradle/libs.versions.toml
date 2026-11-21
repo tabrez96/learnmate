@@ -8,6 +8,8 @@ ktlintPlugin = "13.1.0"
 junitBom = "5.13.4"
 junit4 = "4.13.2"
 robolectric = "4.16"
+# Must match the SDK in app/src/test/resources/robolectric.properties and the Robolectric version.
+robolectric-android-all = "15-robolectric-13954326-i7"
 roborazzi = "1.50.0"
 playServicesAuth = "21.4.0"
 okhttp = "4.12.0"
@@ -31,6 +33,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+robolectric-android-all = { module = "org.robolectric:android-all-instrumented", version.ref = "robolectric-android-all" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }

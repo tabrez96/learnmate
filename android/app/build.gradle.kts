@@ -63,6 +63,23 @@ ktlint {
     version.set("1.7.1")
 }
 
+// Robolectric's own downloader fetches the Android framework jar at test time with no retry, which made CI
+// flaky. Gradle resolves and caches it instead, and Robolectric runs offline against that copy.
+val robolectricRuntime: Configuration by configurations.creating
+
+val copyRobolectricJars by tasks.registering(Copy::class) {
+    from(robolectricRuntime)
+    into(layout.buildDirectory.dir("robolectric-jars"))
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(copyRobolectricJars)
+    val jarDir = layout.buildDirectory.dir("robolectric-jars")
+    inputs.dir(jarDir)
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", jarDir.get().asFile.absolutePath)
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -85,6 +102,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.robolectric)
+    robolectricRuntime(libs.robolectric.android.all) { isTransitive = false }
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.roborazzi)
