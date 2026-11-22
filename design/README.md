@@ -8,16 +8,16 @@ Status: **draft** (UX not approved yet), **approved**, **building** (a ticket fo
 
 | ID | Screen | Status | Purpose | Tickets | Updated |
 | --- | --- | --- | --- | --- | --- |
-| S01 | [Parent home](screens/S01-parent-home/screen.html) (+2 states) · [spec](screens/S01-parent-home/spec.md) | building | See whether today's study happened and start a session | T-125, T-137, T-145, T-209 | 2026-11-16 |
-| S02 | [Todays Material](screens/S02-todays-material/screen.html) (+6 states) · [spec](screens/S02-todays-material/spec.md) | building |  | T-126, T-137, T-138, T-147, T-148 | 2026-11-16 |
-| S03 | [Hand over](screens/S03-hand-over/screen.html) (+4 states) · [spec](screens/S03-hand-over/spec.md) | building | Confirm the session, note the session PIN and hand the device over | T-138, T-139 | 2026-11-16 |
-| S04 | [Session home](screens/S04-session-home/screen.html) (+3 states) · [spec](screens/S04-session-home/spec.md) | building | The student sees today's plan and their progress, and continues | T-121, T-125, T-132, T-142 | 2026-11-16 |
+| S01 | [Parent home](screens/S01-parent-home/screen.html) (+2 states) · [spec](screens/S01-parent-home/spec.md) | building | See whether today's study happened and start a session | T-125, T-137, T-145, T-209, T-233 | 2026-11-16 |
+| S02 | [Todays Material](screens/S02-todays-material/screen.html) (+6 states) · [spec](screens/S02-todays-material/spec.md) | building |  | T-126, T-137, T-138, T-147, T-148, T-233 | 2026-11-16 |
+| S03 | [Hand over](screens/S03-hand-over/screen.html) (+4 states) · [spec](screens/S03-hand-over/spec.md) | building | Confirm the session, note the session PIN and hand the device over | T-138, T-139, T-233 | 2026-11-16 |
+| S04 | [Session home](screens/S04-session-home/screen.html) (+3 states) · [spec](screens/S04-session-home/spec.md) | building | The student sees today's plan and their progress, and continues | T-121, T-125, T-132, T-142, T-233 | 2026-11-16 |
 | S05 | [Mentor](screens/S05-mentor/screen.html) (+4 states) · [spec](screens/S05-mentor/spec.md) | building | Learn today's topic step by step and ask questions | T-128, T-129, T-142, T-143 | 2026-11-16 |
 | S06 | [Test](screens/S06-test/screen.html) (+2 states) · [spec](screens/S06-test/spec.md) | building | Answer the session's test questions | T-126, T-144 | 2026-11-16 |
 | S07 | [Test result](screens/S07-test-result/screen.html) (+2 states) · [spec](screens/S07-test-result/spec.md) | building | See the score, what to review and the rewards earned | T-132, T-144 | 2026-11-16 |
-| S08 | [End session (parent PIN)](screens/S08-end-session-pin/screen.html) (+6 states) · [spec](screens/S08-end-session-pin/spec.md) | building | A parent ends the session with the session PIN, or force-ends it with the fallback password as a last resort | T-126, T-142, T-144, T-145, T-146 | 2026-11-16 |
-| S09 | [Settings](screens/S09-settings/screen.html) (+3 states) · [spec](screens/S09-settings/spec.md) | building | Manage appearance, Telegram, the PIN and fallback password, subjects and their material, exam dates and the mentor | T-124, T-126, T-140, T-148 | 2026-11-16 |
-| S11 | [Session locked](screens/S11-session-locked/screen.html) (+3 states) · [spec](screens/S11-session-locked/spec.md) | building | Lock the session after 5 minutes with no activity, until a parent unlocks it with the session PIN | T-146 | 2026-11-16 |
+| S08 | [End session (parent PIN)](screens/S08-end-session-pin/screen.html) (+6 states) · [spec](screens/S08-end-session-pin/spec.md) | building | A parent ends the session with the session PIN, or force-ends it with the fallback password as a last resort | T-126, T-142, T-144, T-145, T-146, T-233 | 2026-11-16 |
+| S09 | [Settings](screens/S09-settings/screen.html) (+3 states) · [spec](screens/S09-settings/spec.md) | building | Manage appearance, Telegram, the PIN and fallback password, subjects and their material, exam dates and the mentor | T-124, T-126, T-140, T-148, T-233 | 2026-11-16 |
+| S11 | [Session locked](screens/S11-session-locked/screen.html) (+3 states) · [spec](screens/S11-session-locked/spec.md) | building | Lock the session after 5 minutes with no activity, until a parent unlocks it with the session PIN | T-146, T-233 | 2026-11-16 |
 
 ## Retired screens
 

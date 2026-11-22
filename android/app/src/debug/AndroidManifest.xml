@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <application>
+    <!-- Debug only: lets the app reach a LAN http:// server. The main manifest forbids cleartext for release builds. -->
+    <application
+        android:usesCleartextTraffic="true"
+        tools:replace="android:usesCleartextTraffic">
         <activity
             android:name=".classroomcheck.ClassroomCheckActivity"
             android:exported="true"

@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val localProperties =
@@ -24,6 +26,14 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+
+        // Read from local.properties so the device token never lands in git.
+        buildConfigField(
+            "String",
+            "SERVER_URL",
+            "\"${localProperties.getProperty("learnmate.serverUrl", "").ifBlank { "http://127.0.0.1:8000" }}\"",
+        )
+        buildConfigField("String", "DEVICE_TOKEN", "\"${localProperties.getProperty("learnmate.deviceToken", "")}\"")
     }
 
     buildFeatures {
@@ -59,6 +69,10 @@ kotlin {
     jvmToolchain(17)
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 ktlint {
     version.set("1.7.1")
 }
@@ -88,11 +102,17 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.work.runtime.ktx)
+    ksp(libs.room.compiler)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
     debugImplementation(libs.play.services.auth)
-    debugImplementation(libs.okhttp)
-    debugImplementation(libs.kotlinx.serialization.json)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
@@ -108,4 +128,8 @@ dependencies {
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.work.testing)
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.androidx.test.core)
 }
