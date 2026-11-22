@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -182,6 +183,123 @@ class ComponentsScreenshotTest {
                         .focusRing(true, blue, LearnmateShapes.pill)
                         .background(LearnmateTheme.colors.paper, LearnmateShapes.pill),
                 )
+            }
+        }
+
+    @Test
+    fun alerts() =
+        snap("alerts") {
+            Column(Modifier.width(480.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LearnmateAlert("That PIN is not right. 2 tries left.", AlertTone.Error, title = "Wrong PIN")
+                LearnmateAlert("Material is still being read.", AlertTone.Info)
+                LearnmateAlert("The server has not answered for a while.", AlertTone.Warning)
+                LearnmateAlert("Material added.", AlertTone.Ok)
+            }
+        }
+
+    @Test
+    fun telegramLine() = snap("telegramLine") { TelegramLine("Grade sent to Telegram", Modifier.width(480.dp)) }
+
+    @Test
+    fun toggle() =
+        snap("toggle") {
+            Column(Modifier.width(480.dp)) {
+                LearnmateToggle("Send grades to Telegram", true, {})
+                LearnmateToggle("Lock the tablet during a session", false, {}, supporting = "Leaving the app alerts a parent.")
+            }
+        }
+
+    @Test
+    fun segmentedControl() =
+        snap("segmentedControl") {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                SegmentedControl(listOf("Learn and test", "Test only"), 0, {})
+                SegmentedControl(listOf("Learn and test", "Test only"), 1, {})
+            }
+        }
+
+    @Test
+    fun sideNav() =
+        snap("sideNav") {
+            SideNav(
+                listOf("Appearance", "Telegram", "PIN and password", "Subjects and material", "Exam dates").map { SideNavItem(it) },
+                selectedIndex = 2,
+                onSelect = {},
+            )
+        }
+
+    @Test
+    fun dialogHost() =
+        snap("dialogHost") {
+            Box(Modifier.size(700.dp, 420.dp)) {
+                LearnmateDialogHost(
+                    title = "Add subject",
+                    onDismiss = {},
+                    content = {
+                        LearnmateCard(Modifier.fillMaxSize()) {
+                            Text("Today's plan", color = LearnmateTheme.colors.ink, style = MaterialTheme.typography.titleLarge)
+                            Text("Three steps, about 25 minutes.", color = LearnmateTheme.colors.inkSoft)
+                        }
+                    },
+                    dialog = {
+                        Text("Name only. You can add material next.", color = LearnmateTheme.colors.inkSoft)
+                        PrimaryButton("Add subject", {})
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun subjectTiles() =
+        snap("subjectTiles") {
+            SubjectTileGroup {
+                SubjectTile("📐", "Maths", 4, "82% B", selected = true, onClick = {})
+                SubjectTile("🔬", "Science", 0, null, selected = false, onClick = {})
+                NewSubjectTile({})
+            }
+        }
+
+    @Test
+    fun libraryRows() =
+        snap("libraryRows") {
+            Column(Modifier.width(520.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LibraryRow("pdf", "Chapter 3 Fractions", "Added 12 Nov", true, {}, trailing = { LearnmateChip("New", ChipTone.Blue) })
+                LibraryRow("docx", "Photosynthesis notes", "Added 3 Nov", false, {}, trailing = { LearnmateChip("90% A", ChipTone.Ok) })
+            }
+        }
+
+    @Test
+    fun answerOptions() =
+        snap("answerOptions") {
+            Column(Modifier.width(900.dp)) {
+                Row {
+                    AnswerOption('A', "One half", AnswerState.Default, {}, Modifier.weight(1f))
+                    AnswerOption('B', "Two thirds", AnswerState.Selected, {}, Modifier.weight(1f))
+                }
+                Row {
+                    AnswerOption('C', "Three quarters", AnswerState.Right, {}, Modifier.weight(1f))
+                    AnswerOption('D', "Five sixths", AnswerState.Wrong, {}, Modifier.weight(1f))
+                }
+            }
+        }
+
+    @Test
+    fun pin() =
+        snap("pin") {
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                PinDigitBoxes("47")
+                PinDots(2)
+                PinDots(4, error = true)
+                PinKeypad({}, {})
+            }
+        }
+
+    @Test
+    fun passwordField() =
+        snap("passwordField") {
+            Column(Modifier.width(420.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                PasswordField("", {}, "Fallback password")
+                PasswordField("secret12", {}, "Fallback password", isError = true, supporting = "Wrong password. 2 tries left.")
             }
         }
 }

@@ -89,3 +89,21 @@ internal fun LockGlyph(
         style = Stroke(0.12f * w),
     )
 }
+
+@Composable
+internal fun PlaneGlyph(
+    color: Color,
+    modifier: Modifier = Modifier,
+) = Canvas(modifier.size(16.dp)) {
+    val w = this.size.width
+    val h = this.size.height
+    val plane =
+        Path().apply {
+            moveTo(0.05f * w, 0.45f * h)
+            lineTo(0.95f * w, 0.1f * h)
+            lineTo(0.6f * w, 0.9f * h)
+            close()
+        }
+    drawPath(plane, color)
+    drawLine(Color.Black.copy(alpha = 0.35f), Offset(0.95f * w, 0.1f * h), Offset(0.42f * w, 0.58f * h), strokeWidth = 1.5.dp.toPx())
+}
