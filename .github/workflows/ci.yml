@@ -47,3 +47,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prettier --check .
+  secrets:
+    runs-on: ubuntu-latest
+    env:
+      BETTERLEAKS_VERSION: "1.10.1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install betterleaks
+        run: |
+          mkdir -p "$RUNNER_TEMP/betterleaks"
+          cd "$RUNNER_TEMP/betterleaks"
+          base="https://github.com/betterleaks/betterleaks/releases/download/v${BETTERLEAKS_VERSION}"
+          curl -fsSLO "$base/betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSLO "$base/checksums.txt"
+          sha256sum --ignore-missing -c checksums.txt
+          tar -xzf "betterleaks_${BETTERLEAKS_VERSION}_linux_x64.tar.gz" betterleaks
+          echo "$RUNNER_TEMP/betterleaks" >> "$GITHUB_PATH"
+      - run: betterleaks git --redact --verbose .

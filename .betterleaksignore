@@ -1,0 +1,21 @@
+# Hard-coded test passwords in server/tests/ (fake values passed to the fallback-password API, not real credentials).
+# Each line ignores one existing finding by fingerprint; any new finding still fails the scan.
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_delete_data.py:generic-password:31
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:106
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:114
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:116
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:117
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:119
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:125
+36da5e9f1693493d9cb2afb063a6370cc9f7f37d:server/tests/test_family_api.py:generic-password:91
+91c01ef8092bf4ca84346934231a0bff7ee2b76d:server/tests/test_session_end_api.py:generic-password:18
+# Same test fixtures as they appear in develop's history (different commit SHAs).
+4862d25d3b6704d5174da770cb46809d174250a0:server/tests/test_session_end_api.py:generic-password:18
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_delete_data.py:generic-password:31
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:106
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:114
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:116
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:117
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:119
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:125
+4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:91

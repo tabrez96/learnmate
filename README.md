@@ -162,9 +162,19 @@ npx prettier --write .   # format
 npx prettier --check .   # check
 ```
 
+### Secret scan (repo root)
+
+Install betterleaks 1.10.1 from its GitHub releases (the version CI pins in `.github/workflows/ci.yml`), then:
+
+```sh
+betterleaks git --redact --verbose .   # scan the full git history; fails on any finding
+```
+
+`.betterleaksignore` lists the fingerprints of known false positives (hard-coded test passwords in old commits under `server/tests/`). Add a fingerprint there only after confirming the finding is not a real secret.
+
 ### CI
 
-GitHub Actions runs three jobs on every pull request: `server`, `android` and `prettier`.
+GitHub Actions runs four jobs on every pull request: `server`, `android`, `prettier` and `secrets` (betterleaks over the full git history).
 
 ---
 
