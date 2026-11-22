@@ -22,6 +22,7 @@ from learnmate.api import (
     subjects,
 )
 from learnmate.auth import install_device_token_auth
+from learnmate.classroom import ClassroomError
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
 from learnmate.db import create_db_engine, make_session_factory
@@ -91,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     hooks.new_pin = partial(
         telegram_new_pin, settings=settings, clock=clock, cipher=pin_cipher
     )
+    app.state.google_transport = None
     app.state.telegram_hooks = hooks
     app.state.telegram_runner = make_telegram_runner(
         settings, app.state.session_factory, clock, hooks
@@ -110,6 +112,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(exams.router)
     app.include_router(budget.router)
     app.add_exception_handler(BudgetReached, budget.budget_reached_handler)
+    app.add_exception_handler(ClassroomError, materials.classroom_error_handler)
 
     @app.get("/api/v1/health")
     def health() -> dict[str, str]:

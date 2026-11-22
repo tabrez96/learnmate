@@ -36,6 +36,29 @@ Pending: filled in after both runs. Keep one of the two outcomes below and delet
 - Sign-in works: the Classroom tickets use Google Classroom sign-in, with upload as the fallback when a link fails.
 - Blocked: the Classroom tickets ship the upload fallback only; nothing else in the plan changes.
 
+## Server responses
+
+The server maps Google's API answers to these codes, and the app shows `classroom_access_denied` as S02's "Classroom
+sign-in blocked" error state, with upload as the fallback.
+
+| Google answer                | Server status | `error` code               |
+| ---------------------------- | ------------- | -------------------------- |
+| Classroom 401                | 409           | `classroom_sign_in_again`  |
+| Classroom 403                | 403           | `classroom_access_denied`  |
+| Classroom 404                | 404           | `classroom_not_found`      |
+| Drive 401                    | 409           | `classroom_sign_in_again`  |
+| Drive 403                    | 403           | `classroom_access_denied`  |
+| Drive 404                    | 403           | `classroom_access_denied`  |
+| Link is not a Classroom post | 422           | `classroom_link_invalid`   |
+| Nothing usable attached      | 422           | `classroom_no_files`       |
+| File over the size limit     | 413           | `classroom_file_too_large` |
+| More files than the limit    | 422           | `classroom_too_many_files` |
+| 429, 5xx or network error    | 502           | `classroom_unavailable`    |
+
+A school admin block shows up on the device's Google screen ("Access blocked", `admin_policy_enforced`), before any
+token reaches the server. When a token is granted and access is refused later, Google answers 403, which maps to
+`classroom_access_denied`.
+
 ## Notes
 
 - Schools often block third-party apps for accounts marked under 18 unless the school's admin allows the app. That shows
