@@ -360,7 +360,9 @@ def _finish(
         band=band,
         missed=missed,
         points=points,
-        left_count=sum(1 for type_, _ in all_events if type_ == "left"),
+        left_count=sum(
+            1 for type_, _ in all_events if type_ in ("left", "heartbeat_lost")
+        ),
         lock_minutes=rules.lock_minutes(spans),
         force_ended=reason == "fallback",
         timeline=tuple(e for e in all_events if e[0] in TIMELINE_TYPES),

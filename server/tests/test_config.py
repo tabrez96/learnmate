@@ -87,6 +87,9 @@ OVERRIDES = {
     "fallback_lockout_seconds": ("1800", 1800),
     "inactivity_warn_seconds": ("120", 120),
     "inactivity_lock_seconds": ("600", 600),
+    "heartbeat_timeout_seconds": ("90", 90),
+    "watchdog_interval_seconds": ("5", 5.0),
+    "watchdog_enabled": ("false", False),
     "grade_bands": (
         '{"A":95,"B":85,"C":70,"D":50,"F":0}',
         {"A": 95, "B": 85, "C": 70, "D": 50, "F": 0},

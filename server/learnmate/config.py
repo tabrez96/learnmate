@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     inactivity_warn_seconds: int = 240
     inactivity_lock_seconds: int = 300
 
+    # Presence: the watchdog treats a running session with no heartbeat for this long as "left".
+    heartbeat_timeout_seconds: int = 45
+    watchdog_interval_seconds: float = 10.0
+    # Off in tests, which run one watchdog pass at a time with a fake clock.
+    watchdog_enabled: bool = True
+
     # Grade bands: lowest percentage for each band, highest band first.
     grade_bands: dict[str, int] = {"A": 90, "B": 80, "C": 70, "D": 60, "E": 50, "F": 0}
 

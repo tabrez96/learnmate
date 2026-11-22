@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -16,6 +17,7 @@ from learnmate.api import (
     materials,
     mentor,
     plan,
+    presence,
     sessions,
     subjects,
 )
@@ -26,6 +28,7 @@ from learnmate.db import create_db_engine, make_session_factory
 from learnmate.llm import make_llm
 from learnmate.llm.budget import BudgetReached
 from learnmate.llm.metered import MeteredLlm
+from learnmate.presence.watchdog import watchdog_loop
 from learnmate.rag.embed import make_embedder
 from learnmate.rag.reindex import reindex
 from learnmate.rag.rerank import make_reranker
@@ -48,9 +51,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     runner = app.state.telegram_runner
     if runner is not None:
         await runner.start()
+    settings = app.state.settings
+    watchdog = (
+        asyncio.create_task(
+            watchdog_loop(app.state.session_factory, settings, app.state.clock)
+        )
+        if settings.watchdog_enabled
+        else None
+    )
     try:
         yield
     finally:
+        if watchdog is not None:
+            watchdog.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await watchdog
         if runner is not None:
             await runner.stop()
 
@@ -87,6 +102,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(subjects.router)
     app.include_router(materials.router)
     app.include_router(sessions.router)
+    app.include_router(presence.router)
     app.include_router(plan.router)
     app.include_router(mentor.router)
     app.include_router(assess.router)
