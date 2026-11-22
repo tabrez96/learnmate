@@ -77,6 +77,7 @@ cd server
 python3.14 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 alembic upgrade head                                    # migrate
 uvicorn learnmate.main:create_app --factory --reload   # run
+uvicorn learnmate.main:create_app --factory --reload --host 0.0.0.0   # run, reachable from a tablet on the LAN
 pytest                                                  # test
 python -m learnmate.rag.reindex                          # re-embed every chunk with EMBED_MODEL (run after changing it)
 pytest tests/ingest --real                              # read real pages under data/eval/real/ with the real model (needs ANTHROPIC_API_KEY); output in data/eval/real/out/
@@ -139,6 +140,17 @@ A debug-only screen that checks whether a Google account can grant read-only Cla
 ```
 google.androidClientId=<your Android OAuth client id>
 ```
+
+#### Server connection
+
+Add the server address and device token to `android/local.properties`:
+
+```
+learnmate.serverUrl=http://192.168.1.20:8000
+learnmate.deviceToken=<same value as the server's device token in .env>
+```
+
+Use the tunnel's `https://` hostname for a real install. A plain `http://` address (a LAN server) works only in debug builds.
 
 See `docs/classroom-check.md` for the procedure and results.
 
