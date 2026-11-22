@@ -4,7 +4,7 @@ import datetime as dt
 import mimetypes
 import shutil
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, BinaryIO
 
 from fastapi import (
     APIRouter,
@@ -16,13 +16,20 @@ from fastapi import (
     Response,
     UploadFile,
 )
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field, SecretStr
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from learnmate import ingest
 from learnmate.api.deps import AppSettings, DbSession
+from learnmate.classroom import (
+    ClassroomError,
+    InvalidLink,
+    fetch_coursework,
+    parse_link,
+)
+from learnmate.config import Settings
 from learnmate.files import (
     UnsupportedFile,
     material_dir,
@@ -90,6 +97,57 @@ def _check_subject(db: Session, subject_id: int) -> None:
         raise HTTPException(404, "Subject not found")
 
 
+def _store_material(
+    db: Session,
+    settings: Settings,
+    material: Material,
+    files: list[tuple[BinaryIO, str, str, int]],
+) -> None:
+    try:
+        db.add(material)
+        db.flush()
+        directory = material_dir(settings.data_dir, material.id)
+        directory.mkdir(parents=True, exist_ok=True)
+        for i, (f, ext, mime, size) in enumerate(files, start=1):
+            with open(directory / f"{i:02d}{ext}", "wb") as out:
+                shutil.copyfileobj(f, out)
+            db.add(
+                MaterialFile(
+                    material_id=material.id,
+                    path=f"{material.id}/{i:02d}{ext}",
+                    mime=mime,
+                    size=size,
+                )
+            )
+        db.commit()
+    except BaseException:
+        # SQLite can hand a rolled-back id to the next upload, so clean up
+        # while this transaction still holds the id, then roll back.
+        try:
+            if material.id is not None:
+                remove_material_dirs(settings.data_dir, [material.id])
+        finally:
+            db.rollback()
+        raise
+
+
+def _start_ingest(
+    request: Request,
+    background: BackgroundTasks,
+    settings: Settings,
+    material_id: int,
+) -> None:
+    background.add_task(
+        ingest.ingest,
+        request.app.state.session_factory,
+        settings,
+        material_id,
+        llm=request.app.state.llm,
+        embedder=request.app.state.embedder,
+        clock=request.app.state.clock,
+    )
+
+
 @router.post("/subjects/{subject_id}/materials", status_code=201)
 def upload_material(
     subject_id: int,
@@ -138,42 +196,82 @@ def upload_material(
         status="reading",
         chapters_hint=(chapters or "").strip() or None,
     )
-    try:
-        db.add(material)
-        db.flush()
-        directory = material_dir(settings.data_dir, material.id)
-        directory.mkdir(parents=True, exist_ok=True)
-        for i, (f, ext, mime, size) in enumerate(checked, start=1):
-            with open(directory / f"{i:02d}{ext}", "wb") as out:
-                shutil.copyfileobj(f.file, out)
-            db.add(
-                MaterialFile(
-                    material_id=material.id,
-                    path=f"{material.id}/{i:02d}{ext}",
-                    mime=mime,
-                    size=size,
-                )
-            )
-        db.commit()
-    except BaseException:
-        # SQLite can hand a rolled-back id to the next upload, so clean up
-        # while this transaction still holds the id, then roll back.
-        try:
-            if material.id is not None:
-                remove_material_dirs(settings.data_dir, [material.id])
-        finally:
-            db.rollback()
-        raise
-
-    background.add_task(
-        ingest.ingest,
-        request.app.state.session_factory,
+    _store_material(
+        db,
         settings,
-        material.id,
-        llm=request.app.state.llm,
-        embedder=request.app.state.embedder,
-        clock=request.app.state.clock,
+        material,
+        [(f.file, ext, mime, size) for f, ext, mime, size in checked],
     )
+    _start_ingest(request, background, settings, material.id)
+    return _to_out(db, material)
+
+
+class ClassroomIn(BaseModel):
+    link: str = Field(max_length=2000)
+    access_token: SecretStr
+    title: str | None = Field(None, max_length=200)
+    chapters: str | None = Field(None, max_length=2000)
+
+
+def classroom_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, ClassroomError)
+    return JSONResponse(
+        status_code=exc.status, content={"error": exc.code, "detail": str(exc)}
+    )
+
+
+@router.post("/subjects/{subject_id}/materials/classroom", status_code=201)
+def add_classroom_material(
+    subject_id: int,
+    body: ClassroomIn,
+    db: DbSession,
+    settings: AppSettings,
+    request: Request,
+    background: BackgroundTasks,
+) -> MaterialOut:
+    # The token lives only in this request: it is used for the download and
+    # never stored or logged.
+    _check_subject(db, subject_id)
+    token = body.access_token.get_secret_value().strip()
+    if not token:
+        raise HTTPException(422, "Sign in to Google first")
+    try:
+        link = parse_link(body.link)
+    except InvalidLink:
+        raise ClassroomError(
+            "classroom_link_invalid",
+            422,
+            "This isn't a Google Classroom assignment or material link. "
+            "Open the post in Classroom, copy its link and paste it here.",
+        ) from None
+    coursework = fetch_coursework(
+        link,
+        token,
+        max_bytes=settings.upload_max_mb * 1024 * 1024,
+        max_files=settings.upload_max_files,
+        transport=request.app.state.google_transport,
+    )
+    material = Material(
+        subject_id=subject_id,
+        title=(body.title or "").strip()[:200]
+        or coursework.title[:200]
+        or "Classroom material",
+        kind="classroom",
+        source_url=link.url,
+        status="reading",
+        chapters_hint=(body.chapters or "").strip() or None,
+    )
+    try:
+        _store_material(
+            db,
+            settings,
+            material,
+            [(d.file, d.ext, d.mime, d.size) for d in coursework.downloads],
+        )
+    finally:
+        for d in coursework.downloads:
+            d.file.close()
+    _start_ingest(request, background, settings, material.id)
     return _to_out(db, material)
 
 
