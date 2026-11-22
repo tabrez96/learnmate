@@ -10,9 +10,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 
 val LocalLearnmateColors = staticCompositionLocalOf { LightColors }
 val LocalLearnmateGradients = staticCompositionLocalOf { LightGradients }
+val LocalLearnmateSurfaces = staticCompositionLocalOf { LightSurfaces }
 
 object LearnmateTheme {
     val colors: LearnmateColors
@@ -21,17 +23,31 @@ object LearnmateTheme {
     val gradients: LearnmateGradients
         @Composable @ReadOnlyComposable
         get() = LocalLearnmateGradients.current
+    val surfaces: LearnmateSurfaces
+        @Composable @ReadOnlyComposable
+        get() = LocalLearnmateSurfaces.current
 }
 
 @Composable
 fun LearnmateTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    compact: Boolean = LocalConfiguration.current.screenWidthDp < 600,
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
     val gradients = if (darkTheme) DarkGradients else LightGradients
-    CompositionLocalProvider(LocalLearnmateColors provides colors, LocalLearnmateGradients provides gradients) {
-        MaterialTheme(colorScheme = colors.toColorScheme(darkTheme), content = content)
+    val surfaces = if (darkTheme) DarkSurfaces else LightSurfaces
+    CompositionLocalProvider(
+        LocalLearnmateColors provides colors,
+        LocalLearnmateGradients provides gradients,
+        LocalLearnmateSurfaces provides surfaces,
+    ) {
+        MaterialTheme(
+            colorScheme = colors.toColorScheme(darkTheme),
+            typography = learnmateTypography(compact),
+            shapes = LearnmateMaterialShapes,
+            content = content,
+        )
     }
 }
 
