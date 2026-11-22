@@ -8,7 +8,7 @@ Status: **draft** (UX not approved yet), **approved**, **building** (a ticket fo
 
 | ID | Screen | Status | Purpose | Tickets | Updated |
 | --- | --- | --- | --- | --- | --- |
-| S01 | [Parent home](screens/S01-parent-home/screen.html) (+2 states) · [spec](screens/S01-parent-home/spec.md) | building | See whether today's study happened and start a session | T-125, T-137, T-145 | 2026-11-16 |
+| S01 | [Parent home](screens/S01-parent-home/screen.html) (+2 states) · [spec](screens/S01-parent-home/spec.md) | building | See whether today's study happened and start a session | T-125, T-137, T-145, T-209 | 2026-11-16 |
 | S02 | [Todays Material](screens/S02-todays-material/screen.html) (+6 states) · [spec](screens/S02-todays-material/spec.md) | building |  | T-126, T-137, T-138, T-147, T-148 | 2026-11-16 |
 | S03 | [Hand over](screens/S03-hand-over/screen.html) (+4 states) · [spec](screens/S03-hand-over/spec.md) | building | Confirm the session, note the session PIN and hand the device over | T-138, T-139 | 2026-11-16 |
 | S04 | [Session home](screens/S04-session-home/screen.html) (+3 states) · [spec](screens/S04-session-home/spec.md) | building | The student sees today's plan and their progress, and continues | T-121, T-125, T-132, T-142 | 2026-11-16 |
