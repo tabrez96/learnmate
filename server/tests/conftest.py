@@ -41,6 +41,7 @@ def settings(tmp_path: Path) -> Settings:
         device_token="test-device-token",
         llm_provider="fake",
         embed_provider="fake",
+        watchdog_enabled=False,
     )
 
 
