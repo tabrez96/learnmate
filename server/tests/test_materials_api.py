@@ -1,3 +1,5 @@
+import datetime as dt
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
@@ -5,7 +7,15 @@ from sqlalchemy import func, select
 from learnmate import ingest
 from learnmate.config import Settings
 from learnmate.files import UnsupportedFile, resolve_stored, sniff
-from learnmate.models import Chapter, Chunk, Figure, Material, MaterialFile, Subject
+from learnmate.models import (
+    Chapter,
+    Chunk,
+    Figure,
+    LlmUsage,
+    Material,
+    MaterialFile,
+    Subject,
+)
 
 PDF = b"%PDF-1.4\nhello"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 8
@@ -306,3 +316,41 @@ def test_delete_material_removes_figure_file_and_endpoint_404s(
     assert client.delete(f"/api/v1/materials/{mid}").status_code == 204
     assert client.get(f"/api/v1/figures/{fid}").status_code == 404
     assert not path.exists()
+
+
+def _fill_budget(app) -> None:
+    with app.state.session_factory() as db:
+        db.add(
+            LlmUsage(
+                at=dt.datetime.now(dt.UTC).replace(tzinfo=None),
+                model="claude-haiku-4-5-20251001",
+                purpose="read_page",
+                input_tokens=0,
+                output_tokens=0,
+                web_searches=0,
+                cost_usd=app.state.settings.llm_monthly_budget_usd,
+            )
+        )
+        db.commit()
+
+
+def test_upload_when_budget_reached_is_409_and_stores_nothing(
+    client, app, settings, subject_id
+):
+    _fill_budget(app)
+    r = _upload(client, subject_id, [_pdf()])
+    assert r.status_code == 409
+    assert r.json()["error"] == "budget_reached"
+    assert _material_count(app) == 0
+    assert _stored(settings) == []
+
+
+def test_classroom_when_budget_reached_is_409(client, app, subject_id):
+    _fill_budget(app)
+    r = client.post(
+        f"/api/v1/subjects/{subject_id}/materials/classroom",
+        json={"link": "https://classroom.google.com/x", "access_token": "t"},
+    )
+    assert r.status_code == 409
+    assert r.json()["error"] == "budget_reached"
+    assert _material_count(app) == 0

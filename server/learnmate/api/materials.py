@@ -37,6 +37,7 @@ from learnmate.files import (
     resolve_stored,
     sniff,
 )
+from learnmate.llm.budget import require_budget
 from learnmate.models import Chapter, Figure, Material, MaterialFile, Subject
 
 router = APIRouter(prefix="/api/v1")
@@ -161,6 +162,7 @@ def upload_material(
 ) -> MaterialOut:
     # The only place material is created, so it always belongs to a subject.
     _check_subject(db, subject_id)
+    require_budget(db, settings, request.app.state.clock)
     if not files:
         raise HTTPException(422, "Add at least one file")
     if len(files) > settings.upload_max_files:
@@ -232,6 +234,7 @@ def add_classroom_material(
     # The token lives only in this request: it is used for the download and
     # never stored or logged.
     _check_subject(db, subject_id)
+    require_budget(db, settings, request.app.state.clock)
     token = body.access_token.get_secret_value().strip()
     if not token:
         raise HTTPException(422, "Sign in to Google first")
