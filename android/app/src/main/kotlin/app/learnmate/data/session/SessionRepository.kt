@@ -108,6 +108,7 @@ class SessionRepository(
         pinVersion = dto.pinVersion,
         startedAt = dto.startedAt,
         stepIndex = progressFrom?.stepIndex ?: 0,
+        testId = progressFrom?.testId,
         testQuestionIndex = progressFrom?.testQuestionIndex ?: 0,
         testCorrect = progressFrom?.testCorrect ?: 0,
         updatedAtMs = clock(),

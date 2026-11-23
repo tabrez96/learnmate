@@ -169,6 +169,16 @@ class SessionRepositoryTest {
         }
 
     @Test
+    fun `refresh keeps the cached test id`() =
+        runBlocking {
+            repo.create(request)
+            db.sessionDao().updateTest(7, 21, 2, 1, 1)
+            val row = repo.refresh()!!
+            assertEquals(21L, row.testId)
+            assertEquals(2, row.testQuestionIndex)
+        }
+
+    @Test
     fun `refresh to a different session id leaves only one row`() =
         runBlocking {
             repo.create(request)
