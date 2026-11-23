@@ -6,11 +6,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.work.WorkManager
 import app.learnmate.data.api.createLearnmateApi
+import app.learnmate.data.assess.AssessRepository
 import app.learnmate.data.budget.BudgetRepository
 import app.learnmate.data.db.LearnmateDatabase
 import app.learnmate.data.exams.ExamRepository
 import app.learnmate.data.family.FamilyRepository
 import app.learnmate.data.materials.MaterialRepository
+import app.learnmate.data.mentor.MentorRepository
+import app.learnmate.data.plan.PlanRepository
 import app.learnmate.data.presence.LearnmateWorkerFactory
 import app.learnmate.data.presence.OutboxSender
 import app.learnmate.data.presence.PresenceRepository
@@ -46,4 +49,7 @@ class AppContainer(
     val subjectRepository by lazy { SubjectRepository(api) }
     val materialRepository by lazy { MaterialRepository(api) }
     val examRepository by lazy { ExamRepository(api) }
+    val planRepository by lazy { PlanRepository(api) }
+    val mentorRepository by lazy { MentorRepository(api) }
+    val assessRepository by lazy { AssessRepository(api, database.sessionDao()) }
 }

@@ -90,6 +90,67 @@ fun materialDto(
 
 fun examDto(id: Long = 5) = ExamDto(id = id, subjectId = 3, subjectName = "Science", date = "2026-12-01")
 
+fun planDto() =
+    PlanDto(
+        sessionId = 7,
+        testKind = "daily",
+        currentStep = "lesson",
+        steps =
+            listOf(
+                PlanStepDto("lesson", "lesson", "pending"),
+                PlanStepDto("test", "test", "pending", questionCount = 5),
+            ),
+    )
+
+fun progressDto() =
+    ProgressDto(
+        points = 120,
+        streakDays = 3,
+        bestStreakDays = 5,
+        completedSessions = 4,
+        level = LevelDto(2, "Explorer", "Scholar", 100, 250, 130),
+        badges = listOf("first_session"),
+        badgeCount = 1,
+        completedChallenges = 2,
+    )
+
+fun lessonDto() =
+    LessonDto(
+        sessionId = 7,
+        topic = "Photosynthesis",
+        steps = listOf(LessonStepDto(0, "Light", "Plants use light.", LessonCheckDto("What do plants use?", listOf("A", "B", "C", "D")))),
+    )
+
+fun messageDto(
+    id: Long = 1,
+    role: String = "mentor",
+) = MessageDto(id = id, role = role, text = "Plants make food from light.", createdAt = "2026-01-01T10:00:00Z")
+
+fun testDto(
+    id: Long = 21,
+    kind: String = "daily",
+    currentIndex: Int = 0,
+    answers: List<Int?> = listOf(null, null, null),
+) = TestDto(
+    id = id,
+    sessionId = 7,
+    kind = kind,
+    status = "in_progress",
+    total = answers.size,
+    currentIndex = currentIndex,
+    pointsSoFar = 0,
+    questions =
+        answers.mapIndexed { i, a ->
+            TestQuestionDto(
+                position = i,
+                prompt = "Question $i",
+                options = listOf("A", "B", "C", "D"),
+                answerIndex = a,
+                correctIndex = if (a != null) 1 else null,
+            )
+        },
+)
+
 fun endDto(state: String = "ended") = EndDto(sessionDto(state = state), SummaryDto(studiedMin = 20))
 
 /** Records calls by method name; set [failures] to make a method throw. */
@@ -112,10 +173,20 @@ class FakeLearnmateApi : LearnmateApi {
     var exam = examDto()
     var figureBytes = byteArrayOf(1, 2, 3)
     var telegramCodeValue = "abc123"
+    var plan = planDto()
+    var progress = progressDto()
+    var lesson = lessonDto()
+    var checkResult = CheckResultDto(true, 1, "Because.", 5)
+    var messages = listOf(messageDto(1, "student"), messageDto(2))
+    var postedMessage = PostMessageDto(messageDto(1, "student"), messageDto(2))
+    var test = testDto()
+    var testAnswer = TestAnswerDto(true, 1, "Because.", null, 10, false, testDto(currentIndex = 1, answers = listOf(1, null, null)))
+    var challenge = testDto(id = 30, kind = "challenge")
 
     /** Request bodies in call order (upload records its parts). */
     val bodies = mutableListOf<Any>()
     val examQueries = mutableListOf<Long?>()
+    val stepKeys = mutableListOf<String>()
 
     private fun hit(name: String) {
         calls += name
@@ -175,6 +246,84 @@ class FakeLearnmateApi : LearnmateApi {
     override suspend fun heartbeat(id: Long): HeartbeatDto {
         hit("heartbeat")
         return HeartbeatDto(heartbeatState)
+    }
+
+    override suspend fun plan(sessionId: Long): PlanDto {
+        hit("plan")
+        return plan
+    }
+
+    override suspend fun patchPlanStep(
+        sessionId: Long,
+        key: String,
+        body: StepPatchDto,
+    ): PlanDto {
+        hit("patchPlanStep")
+        stepKeys += key
+        bodies += body
+        return plan
+    }
+
+    override suspend fun progress(): ProgressDto {
+        hit("progress")
+        return progress
+    }
+
+    override suspend fun startLesson(sessionId: Long): LessonDto {
+        hit("startLesson")
+        return lesson
+    }
+
+    override suspend fun answerLessonCheck(
+        sessionId: Long,
+        index: Int,
+        body: AnswerRequestDto,
+    ): CheckResultDto {
+        hit("answerLessonCheck")
+        bodies += body
+        return checkResult
+    }
+
+    override suspend fun mentorMessages(sessionId: Long): List<MessageDto> {
+        hit("mentorMessages")
+        return messages
+    }
+
+    override suspend fun postMentorMessage(
+        sessionId: Long,
+        body: MessageRequestDto,
+    ): PostMessageDto {
+        hit("postMentorMessage")
+        bodies += body
+        return postedMessage
+    }
+
+    override suspend fun createTest(sessionId: Long): TestDto {
+        hit("createTest")
+        return test
+    }
+
+    override suspend fun test(testId: Long): TestDto {
+        hit("test")
+        return test
+    }
+
+    override suspend fun answerTest(
+        testId: Long,
+        body: TestAnswerRequestDto,
+    ): TestAnswerDto {
+        hit("answerTest")
+        bodies += body
+        return testAnswer
+    }
+
+    override suspend fun createChallenge(
+        sessionId: Long,
+        body: ChallengeRequestDto,
+    ): TestDto {
+        hit("createChallenge")
+        bodies += body
+        return challenge
     }
 
     override suspend fun budget(): BudgetDto {

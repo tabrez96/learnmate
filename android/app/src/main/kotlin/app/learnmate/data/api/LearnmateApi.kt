@@ -62,6 +62,66 @@ interface LearnmateApi {
         @Path("id") id: Long,
     ): HeartbeatDto
 
+    @GET("sessions/{id}/plan")
+    suspend fun plan(
+        @Path("id") sessionId: Long,
+    ): PlanDto
+
+    @PATCH("sessions/{id}/plan/steps/{key}")
+    suspend fun patchPlanStep(
+        @Path("id") sessionId: Long,
+        @Path("key") key: String,
+        @Body body: StepPatchDto,
+    ): PlanDto
+
+    @GET("progress")
+    suspend fun progress(): ProgressDto
+
+    @POST("sessions/{id}/mentor/lesson")
+    suspend fun startLesson(
+        @Path("id") sessionId: Long,
+    ): LessonDto
+
+    @POST("sessions/{id}/mentor/lesson/steps/{index}/answer")
+    suspend fun answerLessonCheck(
+        @Path("id") sessionId: Long,
+        @Path("index") index: Int,
+        @Body body: AnswerRequestDto,
+    ): CheckResultDto
+
+    @GET("sessions/{id}/mentor/messages")
+    suspend fun mentorMessages(
+        @Path("id") sessionId: Long,
+    ): List<MessageDto>
+
+    @POST("sessions/{id}/mentor/messages")
+    suspend fun postMentorMessage(
+        @Path("id") sessionId: Long,
+        @Body body: MessageRequestDto,
+    ): PostMessageDto
+
+    @POST("sessions/{id}/tests")
+    suspend fun createTest(
+        @Path("id") sessionId: Long,
+    ): TestDto
+
+    @GET("tests/{id}")
+    suspend fun test(
+        @Path("id") testId: Long,
+    ): TestDto
+
+    @POST("tests/{id}/answers")
+    suspend fun answerTest(
+        @Path("id") testId: Long,
+        @Body body: TestAnswerRequestDto,
+    ): TestAnswerDto
+
+    @POST("sessions/{id}/challenges")
+    suspend fun createChallenge(
+        @Path("id") sessionId: Long,
+        @Body body: ChallengeRequestDto,
+    ): TestDto
+
     @GET("budget")
     suspend fun budget(): BudgetDto
 

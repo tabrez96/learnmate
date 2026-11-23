@@ -1,6 +1,7 @@
 package app.learnmate.data.db
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -27,6 +28,8 @@ data class CurrentSessionEntity(
     val startedAt: String?,
     /** Lesson step the child is on. */
     val stepIndex: Int = 0,
+    /** Graded test in progress; null before the test starts. */
+    val testId: Long? = null,
     /** Next test question. */
     val testQuestionIndex: Int = 0,
     val testCorrect: Int = 0,
@@ -82,6 +85,18 @@ interface SessionDao {
         testCorrect: Int,
         updatedAtMs: Long,
     )
+
+    @Query(
+        "UPDATE current_session SET testId = :testId, testQuestionIndex = :testQuestionIndex, " +
+            "testCorrect = :testCorrect, updatedAtMs = :updatedAtMs WHERE id = :id",
+    )
+    suspend fun updateTest(
+        id: Long,
+        testId: Long,
+        testQuestionIndex: Int,
+        testCorrect: Int,
+        updatedAtMs: Long,
+    )
 }
 
 @Dao
@@ -102,7 +117,12 @@ interface OutboxDao {
     suspend fun count(): Int
 }
 
-@Database(entities = [CurrentSessionEntity::class, OutboxEventEntity::class], version = 1, exportSchema = true)
+@Database(
+    entities = [CurrentSessionEntity::class, OutboxEventEntity::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    exportSchema = true,
+)
 abstract class LearnmateDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
 
