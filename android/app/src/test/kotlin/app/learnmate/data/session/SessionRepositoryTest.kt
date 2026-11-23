@@ -52,7 +52,7 @@ class SessionRepositoryTest {
             val row = db.sessionDao().get()!!
             assertEquals("4821", dto.pin)
             assertFalse(row.pinHash!!.contains("4821"))
-            assertTrue(PinHasher.verify("4821", row.pinHash!!))
+            assertTrue(SecretHasher.verify("4821", row.pinHash!!))
             assertEquals(3, row.pinVersion)
         }
 
@@ -78,7 +78,7 @@ class SessionRepositoryTest {
             repo.replacePin(7)
             val row = db.sessionDao().get()!!
             assertEquals(2, row.pinVersion)
-            assertTrue(PinHasher.verify("9999", row.pinHash!!))
+            assertTrue(SecretHasher.verify("9999", row.pinHash!!))
             assertEquals(listOf(2, 3, 1), listOf(row.stepIndex, row.testQuestionIndex, row.testCorrect))
         }
 
@@ -90,7 +90,7 @@ class SessionRepositoryTest {
             repo.replacePin(8)
             val cached = db.sessionDao().get()!!
             assertEquals(8L, cached.id)
-            assertTrue(PinHasher.verify("9999", cached.pinHash!!))
+            assertTrue(SecretHasher.verify("9999", cached.pinHash!!))
             assertEquals(
                 1,
                 db.query("SELECT COUNT(*) FROM current_session", null).use {
