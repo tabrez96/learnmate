@@ -25,13 +25,13 @@ class SessionRepository(
     /** The caller shows the returned PIN to the parent once; only its hash is kept. */
     suspend fun create(request: SessionRequestDto): SessionWithPinDto {
         val dto = apiCall { api.createSession(request) }
-        dao.replaceCurrent(entityOf(dto.toSession(), PinHasher.hash(dto.pin), null))
+        dao.replaceCurrent(entityOf(dto.toSession(), SecretHasher.hash(dto.pin), null))
         return dto
     }
 
     suspend fun replacePin(id: Long): SessionWithPinDto {
         val dto = apiCall { api.replacePin(id) }
-        dao.replaceCurrent(entityOf(dto.toSession(), PinHasher.hash(dto.pin), dao.get()?.takeIf { it.id == dto.id }))
+        dao.replaceCurrent(entityOf(dto.toSession(), SecretHasher.hash(dto.pin), dao.get()?.takeIf { it.id == dto.id }))
         return dto
     }
 
@@ -53,7 +53,7 @@ class SessionRepository(
         return mergeIntoCache(dto)
     }
 
-    suspend fun checkPinOffline(pin: String): Boolean = dao.get()?.pinHash?.let { PinHasher.verify(pin, it) } ?: false
+    suspend fun checkPinOffline(pin: String): Boolean = dao.get()?.pinHash?.let { SecretHasher.verify(pin, it) } ?: false
 
     suspend fun end(
         id: Long,

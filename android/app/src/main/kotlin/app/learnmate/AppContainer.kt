@@ -14,6 +14,7 @@ import app.learnmate.data.presence.PresenceRepository
 import app.learnmate.data.presence.WorkManagerOutboxScheduler
 import app.learnmate.data.session.SessionRepository
 import app.learnmate.data.settings.AppearanceRepository
+import app.learnmate.data.settings.FallbackPasswordCache
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -24,6 +25,7 @@ class AppContainer(
     private val appContext = context.applicationContext
 
     val appearanceRepository = AppearanceRepository(appContext.settingsDataStore)
+    val fallbackPasswordCache = FallbackPasswordCache(appContext.settingsDataStore)
 
     // Lazy so UI tests never open the database or touch WorkManager.
     val api by lazy { createLearnmateApi(BuildConfig.SERVER_URL, BuildConfig.DEVICE_TOKEN) }

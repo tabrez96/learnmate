@@ -21,10 +21,12 @@ room = "2.8.5"
 work = "2.12.0"
 ksp = "2.2.20-2.0.4"
 androidxTest = "1.7.0"
+navigation = "2.9.8"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
