@@ -1,9 +1,19 @@
 package app.learnmate.data.api
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
+import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface LearnmateApi {
     @POST("sessions")
@@ -54,4 +64,101 @@ interface LearnmateApi {
 
     @GET("budget")
     suspend fun budget(): BudgetDto
+
+    @GET("family")
+    suspend fun family(): FamilyDto
+
+    @PUT("family")
+    suspend fun putFamily(
+        @Body body: FamilyRequestDto,
+    ): FamilyDto
+
+    @PUT("family/fallback")
+    suspend fun putFallback(
+        @Body body: FallbackRequestDto,
+    )
+
+    @POST("family/telegram-code")
+    suspend fun telegramCode(): TelegramCodeDto
+
+    @GET("subjects")
+    suspend fun subjects(): List<SubjectDto>
+
+    @POST("subjects")
+    suspend fun createSubject(
+        @Body body: SubjectRequestDto,
+    ): SubjectDto
+
+    @PATCH("subjects/{id}")
+    suspend fun patchSubject(
+        @Path("id") id: Long,
+        @Body body: SubjectPatchDto,
+    ): SubjectDto
+
+    @DELETE("subjects/{id}")
+    suspend fun deleteSubject(
+        @Path("id") id: Long,
+    )
+
+    @Multipart
+    @POST("subjects/{id}/materials")
+    suspend fun uploadMaterial(
+        @Path("id") subjectId: Long,
+        @Part files: List<MultipartBody.Part>,
+        @Part("title") title: RequestBody?,
+        @Part("chapters") chapters: RequestBody?,
+    ): MaterialDto
+
+    @POST("subjects/{id}/materials/classroom")
+    suspend fun addClassroomMaterial(
+        @Path("id") subjectId: Long,
+        @Body body: ClassroomRequestDto,
+    ): MaterialDto
+
+    @GET("subjects/{id}/materials")
+    suspend fun materials(
+        @Path("id") subjectId: Long,
+    ): List<MaterialDto>
+
+    @GET("materials/{id}")
+    suspend fun material(
+        @Path("id") id: Long,
+    ): MaterialDto
+
+    @DELETE("materials/{id}")
+    suspend fun deleteMaterial(
+        @Path("id") id: Long,
+    )
+
+    @GET("figures/{id}")
+    suspend fun figure(
+        @Path("id") id: Long,
+    ): ResponseBody
+
+    @GET("exams")
+    suspend fun exams(
+        @Query("subject_id") subjectId: Long?,
+    ): List<ExamDto>
+
+    @POST("exams")
+    suspend fun createExam(
+        @Body body: ExamRequestDto,
+    ): ExamDto
+
+    @PATCH("exams/{id}")
+    suspend fun patchExam(
+        @Path("id") id: Long,
+        @Body body: ExamPatchDto,
+    ): ExamDto
+
+    @DELETE("exams/{id}")
+    suspend fun deleteExam(
+        @Path("id") id: Long,
+    )
+
+    // Retrofit's @DELETE can't carry a body.
+    @HTTP(method = "DELETE", path = "data", hasBody = true)
+    suspend fun deleteData(
+        @Body body: DeleteDataRequestDto,
+    )
 }

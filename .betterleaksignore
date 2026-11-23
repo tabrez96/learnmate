@@ -19,3 +19,5 @@
 4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:119
 4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:125
 4d0d7200d7575cea5f8ecdd1c94a47496de2b5f3:server/tests/test_family_api.py:generic-password:91
+# Fake fallback password in the Android DELETE /data request test (not a real credential).
+e0ffbd2dd00e1489527c3940dedd8a5dead930ec:android/app/src/test/kotlin/app/learnmate/data/materials/MaterialUploadTest.kt:generic-password:96

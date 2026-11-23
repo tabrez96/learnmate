@@ -8,6 +8,9 @@ import androidx.work.WorkManager
 import app.learnmate.data.api.createLearnmateApi
 import app.learnmate.data.budget.BudgetRepository
 import app.learnmate.data.db.LearnmateDatabase
+import app.learnmate.data.exams.ExamRepository
+import app.learnmate.data.family.FamilyRepository
+import app.learnmate.data.materials.MaterialRepository
 import app.learnmate.data.presence.LearnmateWorkerFactory
 import app.learnmate.data.presence.OutboxSender
 import app.learnmate.data.presence.PresenceRepository
@@ -15,6 +18,7 @@ import app.learnmate.data.presence.WorkManagerOutboxScheduler
 import app.learnmate.data.session.SessionRepository
 import app.learnmate.data.settings.AppearanceRepository
 import app.learnmate.data.settings.FallbackPasswordCache
+import app.learnmate.data.subjects.SubjectRepository
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -38,4 +42,8 @@ class AppContainer(
         PresenceRepository(api, database.outboxDao(), database.sessionDao(), outboxScheduler)
     }
     val budgetRepository by lazy { BudgetRepository(api) }
+    val familyRepository by lazy { FamilyRepository(api, fallbackPasswordCache) }
+    val subjectRepository by lazy { SubjectRepository(api) }
+    val materialRepository by lazy { MaterialRepository(api) }
+    val examRepository by lazy { ExamRepository(api) }
 }

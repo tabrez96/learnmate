@@ -1,6 +1,9 @@
 package app.learnmate.data.api
 
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.HttpException
 import retrofit2.Response
@@ -60,6 +63,33 @@ fun sessionWithPin(
     )
 }
 
+fun familyDto() =
+    FamilyDto(
+        childName = "Sam",
+        grade = 7,
+        outsideBooksAllowed = false,
+        inactivityWarnS = 60,
+        inactivityLockS = 120,
+        telegramConnected = false,
+        fallbackSet = true,
+    )
+
+fun subjectDto(id: Long = 3) = SubjectDto(id = id, name = "Science", icon = "science", materialCount = 2)
+
+fun materialDto(
+    id: Long = 11,
+    status: String = "reading",
+) = MaterialDto(
+    id = id,
+    subjectId = 3,
+    title = "Chapter 1",
+    kind = "upload",
+    status = status,
+    createdAt = "2026-01-01T10:00:00Z",
+)
+
+fun examDto(id: Long = 5) = ExamDto(id = id, subjectId = 3, subjectName = "Science", date = "2026-12-01")
+
 fun endDto(state: String = "ended") = EndDto(sessionDto(state = state), SummaryDto(studiedMin = 20))
 
 /** Records calls by method name; set [failures] to make a method throw. */
@@ -73,6 +103,19 @@ class FakeLearnmateApi : LearnmateApi {
     var eventState = "active"
     var heartbeatState = "active"
     var budget = BudgetDto("2026-01", 1.5, 10.0, false)
+    var family = familyDto()
+    var subjects = listOf(subjectDto())
+    var subject = subjectDto()
+    var material = materialDto()
+    var materials = listOf(materialDto())
+    var exams = listOf(examDto())
+    var exam = examDto()
+    var figureBytes = byteArrayOf(1, 2, 3)
+    var telegramCodeValue = "abc123"
+
+    /** Request bodies in call order (upload records its parts). */
+    val bodies = mutableListOf<Any>()
+    val examQueries = mutableListOf<Long?>()
 
     private fun hit(name: String) {
         calls += name
@@ -137,5 +180,119 @@ class FakeLearnmateApi : LearnmateApi {
     override suspend fun budget(): BudgetDto {
         hit("budget")
         return budget
+    }
+
+    override suspend fun family(): FamilyDto {
+        hit("family")
+        return family
+    }
+
+    override suspend fun putFamily(body: FamilyRequestDto): FamilyDto {
+        hit("putFamily")
+        bodies += body
+        return family
+    }
+
+    override suspend fun putFallback(body: FallbackRequestDto) {
+        hit("putFallback")
+        bodies += body
+    }
+
+    override suspend fun telegramCode(): TelegramCodeDto {
+        hit("telegramCode")
+        return TelegramCodeDto(telegramCodeValue)
+    }
+
+    override suspend fun subjects(): List<SubjectDto> {
+        hit("subjects")
+        return subjects
+    }
+
+    override suspend fun createSubject(body: SubjectRequestDto): SubjectDto {
+        hit("createSubject")
+        bodies += body
+        return subject
+    }
+
+    override suspend fun patchSubject(
+        id: Long,
+        body: SubjectPatchDto,
+    ): SubjectDto {
+        hit("patchSubject")
+        bodies += body
+        return subject
+    }
+
+    override suspend fun deleteSubject(id: Long) {
+        hit("deleteSubject")
+    }
+
+    override suspend fun uploadMaterial(
+        subjectId: Long,
+        files: List<MultipartBody.Part>,
+        title: RequestBody?,
+        chapters: RequestBody?,
+    ): MaterialDto {
+        hit("uploadMaterial")
+        bodies.add(files)
+        return material
+    }
+
+    override suspend fun addClassroomMaterial(
+        subjectId: Long,
+        body: ClassroomRequestDto,
+    ): MaterialDto {
+        hit("addClassroomMaterial")
+        bodies += body
+        return material
+    }
+
+    override suspend fun materials(subjectId: Long): List<MaterialDto> {
+        hit("materials")
+        return materials
+    }
+
+    override suspend fun material(id: Long): MaterialDto {
+        hit("material")
+        return material
+    }
+
+    override suspend fun deleteMaterial(id: Long) {
+        hit("deleteMaterial")
+    }
+
+    override suspend fun figure(id: Long): ResponseBody {
+        hit("figure")
+        return figureBytes.toResponseBody("image/png".toMediaType())
+    }
+
+    override suspend fun exams(subjectId: Long?): List<ExamDto> {
+        hit("exams")
+        examQueries += subjectId
+        return exams
+    }
+
+    override suspend fun createExam(body: ExamRequestDto): ExamDto {
+        hit("createExam")
+        bodies += body
+        return exam
+    }
+
+    override suspend fun patchExam(
+        id: Long,
+        body: ExamPatchDto,
+    ): ExamDto {
+        hit("patchExam")
+        bodies += body
+        return exam
+    }
+
+    override suspend fun deleteExam(id: Long) {
+        hit("deleteExam")
+    }
+
+    override suspend fun deleteData(body: DeleteDataRequestDto) {
+        hit("deleteData")
+        bodies += body
     }
 }
