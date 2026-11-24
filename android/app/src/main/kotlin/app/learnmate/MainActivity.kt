@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import app.learnmate.ui.LearnmateApp
+import app.learnmate.ui.mentor.MentorRoute
 import app.learnmate.ui.navigation.StartGraph
 import app.learnmate.ui.navigation.startGraphFor
 import app.learnmate.ui.theme.LearnmateTheme
@@ -27,7 +28,14 @@ class MainActivity : ComponentActivity() {
             val mode = appearance
             val start = startGraph
             if (mode != null && start != null) {
-                LearnmateTheme(darkTheme = mode.isDark(isSystemInDarkTheme())) { LearnmateApp(start) }
+                LearnmateTheme(darkTheme = mode.isDark(isSystemInDarkTheme())) {
+                    LearnmateApp(start, mentor = {
+                        back,
+                        test,
+                        ->
+                        MentorRoute(container, back, test)
+                    })
+                }
             }
         }
     }

@@ -45,26 +45,41 @@ fun StepRow(
     state: StepState,
     modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
+    /** A plain list line (no card, no subtitle) for side panels. */
+    compact: Boolean = false,
 ) {
     val colors = LearnmateTheme.colors
     val surfaces = LearnmateTheme.surfaces
     val shape = LearnmateShapes.button
-    val outline = if (state == StepState.Current) Modifier.selectedHalo(surfaces, shape) else Modifier.border(1.dp, colors.line, shape)
+    val outline =
+        if (compact) {
+            Modifier
+        } else if (state ==
+            StepState.Current
+        ) {
+            Modifier.selectedHalo(surfaces, shape)
+        } else {
+            Modifier.border(1.dp, colors.line, shape)
+        }
     Row(
         modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 68.dp)
+            .defaultMinSize(minHeight = if (compact) 44.dp else 68.dp)
             .then(outline)
-            .background(colors.card, shape)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .then(if (compact) Modifier else Modifier.background(colors.card, shape).padding(horizontal = 14.dp, vertical = 12.dp))
             .semantics(mergeDescendants = true) { stateDescription = state.description },
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StepDot(number, state)
         Column(Modifier.weight(1f)) {
-            Text(title, color = colors.ink, style = MaterialTheme.typography.titleMedium)
-            Text(subtitle, color = colors.inkSoft, style = MaterialTheme.typography.bodySmall)
+            val titleStyle = MaterialTheme.typography.titleMedium
+            Text(
+                title,
+                color = colors.ink,
+                style = if (compact && state == StepState.Current) titleStyle.copy(fontWeight = FontWeight.Bold) else titleStyle,
+            )
+            if (!compact) Text(subtitle, color = colors.inkSoft, style = MaterialTheme.typography.bodySmall)
         }
         trailing?.invoke()
     }

@@ -12,7 +12,10 @@ import java.io.IOException
 sealed class ApiError(
     message: String,
 ) : Exception(message) {
-    data object BudgetReached : ApiError("AI budget reached")
+    /** The AI budget is used up; [detail] is the server's message, shown to the user as is. */
+    data class BudgetReached(
+        val detail: String,
+    ) : ApiError(detail)
 
     /** 401 */
     data object Unauthorized : ApiError("Invalid device token")
@@ -85,15 +88,16 @@ internal fun toApiError(
         } catch (_: IllegalArgumentException) {
             null
         }
-    if ((json?.get("error") as? JsonPrimitive)?.takeIf { it.isString }?.content == "budget_reached") {
-        return ApiError.BudgetReached
-    }
     val detail: JsonElement? = json?.get("detail")
     val detailObject = detail as? JsonObject
     val detailText =
         (detail as? JsonPrimitive)?.takeIf { it.isString }?.content
             ?: (detailObject?.get("message") as? JsonPrimitive)?.takeIf { it.isString }?.content
             ?: "HTTP $code"
+    if ((json?.get("error") as? JsonPrimitive)?.takeIf { it.isString }?.content == "budget_reached") {
+        val message = (detail as? JsonPrimitive)?.takeIf { it.isString }?.content
+        return ApiError.BudgetReached(message ?: "AI spending reached this month's budget.")
+    }
     val retry = retryAfter?.toLongOrNull() ?: 0
     val fallback = (detailObject?.get("fallback_available") as? JsonPrimitive)?.booleanOrNull ?: false
     return when (code) {

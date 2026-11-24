@@ -33,6 +33,7 @@ fun LearnmateApp(
     startGraph: StartGraph,
     // Keyed by startGraph so a saved back stack only restores under the start graph it was saved with.
     navController: NavHostController = key(startGraph) { rememberNavController() },
+    mentor: @Composable (onBack: () -> Unit, onReadyForTest: () -> Unit) -> Unit = { _, _ -> PlaceholderScreen("S05", "Mentor") },
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = LearnmateTheme.colors.paper) {
         NavHost(navController, startDestination = if (startGraph == StartGraph.Session) SessionGraph else ParentGraph) {
@@ -44,7 +45,7 @@ fun LearnmateApp(
             }
             navigation<SessionGraph>(startDestination = SessionHome) {
                 sessionScreen<SessionHome> { PlaceholderScreen("S04", "Session home") }
-                sessionScreen<Mentor> { PlaceholderScreen("S05", "Mentor") }
+                sessionScreen<Mentor> { mentor({ navController.popBackStack() }, { navController.navigate(Test) }) }
                 sessionScreen<Test> { PlaceholderScreen("S06", "Test") }
                 sessionScreen<TestResult> { PlaceholderScreen("S07", "Test result") }
                 sessionScreen<EndSession> { PlaceholderScreen("S08", "End session") }
