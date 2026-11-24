@@ -71,7 +71,7 @@ fun LearnmateTopBar(
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Wordmark(Modifier.weight(1f, fill = false))
+        Wordmark(Modifier.weight(1f))
         Spacer(Modifier.width(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
     }

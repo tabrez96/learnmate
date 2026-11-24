@@ -10,8 +10,8 @@ import java.io.IOException
 class ApiErrorTest {
     @Test
     fun `budget body maps to BudgetReached whatever the status`() {
-        assertEquals(ApiError.BudgetReached, toApiError(409, BUDGET_BODY, null))
-        assertEquals(ApiError.BudgetReached, toApiError(402, BUDGET_BODY, null))
+        assertEquals(ApiError.BudgetReached("Monthly AI budget reached"), toApiError(409, BUDGET_BODY, null))
+        assertEquals(ApiError.BudgetReached("Monthly AI budget reached"), toApiError(402, BUDGET_BODY, null))
     }
 
     @Test
