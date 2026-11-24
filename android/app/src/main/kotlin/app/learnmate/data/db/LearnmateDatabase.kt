@@ -88,7 +88,8 @@ interface SessionDao {
 
     @Query(
         "UPDATE current_session SET testId = :testId, testQuestionIndex = :testQuestionIndex, " +
-            "testCorrect = :testCorrect, updatedAtMs = :updatedAtMs WHERE id = :id",
+            "testCorrect = :testCorrect, updatedAtMs = :updatedAtMs WHERE id = :id AND " +
+            "(testId IS NULL OR testId != :testId OR testQuestionIndex <= :testQuestionIndex)",
     )
     suspend fun updateTest(
         id: Long,
