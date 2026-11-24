@@ -81,6 +81,30 @@ class AssessRepositoryTest {
         }
 
     @Test
+    fun `late answer response does not move the cached index backward`() =
+        runBlocking {
+            insertRow()
+            api.testAnswer = api.testAnswer.copy(test = testDto(currentIndex = 2, answers = listOf(1, 1, null)))
+            repo.answer(21, 1, 1)
+            api.testAnswer = api.testAnswer.copy(test = testDto(currentIndex = 1, answers = listOf(1, null, null)))
+            repo.answer(21, 0, 1)
+            val row = db.sessionDao().get()!!
+            assertEquals(2, row.testQuestionIndex)
+            assertEquals(2, row.testCorrect)
+        }
+
+    @Test
+    fun `a new test replaces the cached one even at a lower index`() =
+        runBlocking {
+            insertRow()
+            db.sessionDao().updateTest(7, 20, 2, 1, 1)
+            repo.createTest(7)
+            val row = db.sessionDao().get()!!
+            assertEquals(21L, row.testId)
+            assertEquals(0, row.testQuestionIndex)
+        }
+
+    @Test
     fun `answer for another session leaves the row alone`() =
         runBlocking {
             insertRow()
