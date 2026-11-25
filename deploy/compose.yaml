@@ -8,8 +8,11 @@ services:
     environment:
       DATA_DIR: /data
       EMBED_CACHE_DIR: /data/models
+      BACKUP_DIR: /backups
     volumes:
       - ./data:/data
+      # Point this at a second disk if you have one, e.g. /mnt/backup/learnmate:/backups
+      - ./backups:/backups
     # No ports: the server is reached only through the tunnel.
 
   cloudflared:

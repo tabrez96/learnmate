@@ -90,6 +90,10 @@ OVERRIDES = {
     "heartbeat_timeout_seconds": ("90", 90),
     "watchdog_interval_seconds": ("5", 5.0),
     "watchdog_enabled": ("false", False),
+    "backup_dir": ("/tmp/backups", Path("/tmp/backups")),
+    "backup_hour": ("4", 4),
+    "backup_keep_days": ("7", 7),
+    "backup_enabled": ("false", False),
     "grade_bands": (
         '{"A":95,"B":85,"C":70,"D":50,"F":0}',
         {"A": 95, "B": 85, "C": 70, "D": 50, "F": 0},
@@ -195,3 +199,13 @@ def test_model_with_price_passes() -> None:
 def test_negative_budget_fails() -> None:
     with pytest.raises(ValidationError):
         Settings(llm_monthly_budget_usd=-1)
+
+
+def test_backup_hour_out_of_range_fails() -> None:
+    with pytest.raises(ValidationError):
+        Settings(backup_hour=24)
+
+
+def test_backup_keep_days_below_one_fails() -> None:
+    with pytest.raises(ValidationError):
+        Settings(backup_keep_days=0)

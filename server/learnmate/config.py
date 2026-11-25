@@ -36,8 +36,12 @@ class Settings(BaseSettings):
     timezone: str = "UTC"
 
     @property
+    def database_path(self) -> Path:
+        return self.data_dir / "learnmate.db"
+
+    @property
     def database_url(self) -> str:
-        return f"sqlite:///{self.data_dir / 'learnmate.db'}"
+        return f"sqlite:///{self.database_path}"
 
     # AI
     model_main: str = "claude-sonnet-5-5"
@@ -93,6 +97,13 @@ class Settings(BaseSettings):
     # Off in tests, which run one watchdog pass at a time with a fake clock.
     watchdog_enabled: bool = True
 
+    # Backups: nightly at BACKUP_HOUR (local time in TIMEZONE) into BACKUP_DIR, kept BACKUP_KEEP_DAYS days.
+    backup_dir: Path = Path("backups")
+    backup_hour: int = 3
+    backup_keep_days: int = 14
+    # Off in tests, which call run_backup directly with a fake clock.
+    backup_enabled: bool = True
+
     # Grade bands: lowest percentage for each band, highest band first.
     grade_bands: dict[str, int] = {"A": 90, "B": 80, "C": 70, "D": 60, "E": 50, "F": 0}
 
@@ -131,6 +142,10 @@ class Settings(BaseSettings):
                 raise ValueError(f"llm_prices has no price for {model}")
         if self.llm_monthly_budget_usd < 0:
             raise ValueError("llm_monthly_budget_usd must not be negative")
+        if not 0 <= self.backup_hour <= 23:
+            raise ValueError("backup_hour must be between 0 and 23")
+        if self.backup_keep_days < 1:
+            raise ValueError("backup_keep_days must be at least 1")
         return self
 
 

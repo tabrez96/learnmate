@@ -1,6 +1,6 @@
 # Running the server at home
 
-Two containers run on your own computer: `server` (the app's API, the Telegram bot and the watchdog) and `cloudflared` (the Cloudflare Tunnel). Nothing is opened on your router: the tunnel only makes outbound connections. All data (database, uploaded files, downloaded models) lives in `deploy/data/`.
+Two containers run on your own computer: `server` (the app's API, the Telegram bot and the watchdog) and `cloudflared` (the Cloudflare Tunnel). Nothing is opened on your router: the tunnel only makes outbound connections. All data (database, uploaded files, downloaded models) lives in `deploy/data/`, and nightly backups are kept in `deploy/backups/`.
 
 ## What you need
 
@@ -99,6 +99,32 @@ docker compose up -d server
 ```
 
 The budget month follows `TIMEZONE`. Telegram alerts arrive at 80% and 100%.
+
+## Backups
+
+Every night at `BACKUP_HOUR` (in `TIMEZONE`), the server copies the database, the uploaded files and the PIN key into `deploy/backups/learnmate-<UTC date-time>/` without stopping. If the computer was off at that hour, a backup runs when the server next starts. Backups older than 14 days are deleted. Folders ending in `.partial` are unfinished, and the next run cleans them up.
+
+A backup on the same disk doesn't survive a disk failure, so point the `./backups` volume in `compose.yaml` at a second disk or copy the folder off the machine regularly.
+
+```sh
+docker compose exec server python -m learnmate.backup now    # make one now
+docker compose exec server python -m learnmate.backup list   # finished backups, oldest first
+docker compose logs server | grep -i backup                  # "Backup written to ..." or "Backup failed"
+```
+
+Downloaded models in `deploy/data/models` are not backed up. They download again.
+
+## Restoring a backup
+
+1. List the backups and pick a name: `docker compose exec server python -m learnmate.backup list`
+2. Stop the server, because the database must not be in use while it is replaced: `docker compose stop server`
+3. Restore: `docker compose run --rm server python -m learnmate.backup restore learnmate-YYYYMMDD-HHMMSS`
+4. Start the server with `docker compose up -d server`, wait for "healthy" in `docker compose ps`, then run the checks from "5. Check the tunnel" and open the app.
+5. The replaced data is in `deploy/data/replaced-<time>/`. Delete it once the restored data looks right.
+
+To restore on a new computer: do setup steps 1-3 with the same `.env` (the same `PIN_KEY` if you set one), stop the server, copy the backup folder into `deploy/backups/`, then follow steps 3-5.
+
+The server's test suite runs these backup and restore commands (`test_restore_steps_bring_back_the_data`).
 
 ## Switching the embedding model
 

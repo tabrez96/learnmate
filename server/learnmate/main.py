@@ -22,6 +22,7 @@ from learnmate.api import (
     subjects,
 )
 from learnmate.auth import install_device_token_auth
+from learnmate.backup.job import backup_loop
 from learnmate.classroom import ClassroomError
 from learnmate.clock import SystemClock
 from learnmate.config import Settings, get_settings
@@ -60,9 +61,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if settings.watchdog_enabled
         else None
     )
+    backup = (
+        asyncio.create_task(backup_loop(settings, app.state.clock))
+        if settings.backup_enabled
+        else None
+    )
     try:
         yield
     finally:
+        if backup is not None:
+            backup.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await backup
         if watchdog is not None:
             watchdog.cancel()
             with contextlib.suppress(asyncio.CancelledError):

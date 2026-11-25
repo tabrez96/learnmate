@@ -11,6 +11,7 @@ __pycache__/
 /server/data/
 /server/data/eval/real/
 /deploy/data/
+/deploy/backups/
 android/.gradle/
 android/build/
 android/app/build/
