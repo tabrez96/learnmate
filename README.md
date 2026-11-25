@@ -141,6 +141,12 @@ A debug-only screen that checks whether a Google account can grant read-only Cla
 google.androidClientId=<your Android OAuth client id>
 ```
 
+#### Slice run (debug builds only)
+
+A debug-only launcher uploads one real chapter to the server, waits until it is read, starts a learn session on it and opens the mentor screen, where you ask questions. It needs the server connection below and a real API key on the server.
+
+See `docs/slice-report.md` for the procedure and results.
+
 #### Server connection
 
 Add the server address and device token to `android/local.properties`:
