@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.learnmate.AppContainer
 import app.learnmate.data.api.ApiError
+import app.learnmate.data.mentor.MentorRepository
 import app.learnmate.data.settings.Appearance
 import app.learnmate.session.mentor.BOOKS_ONLY_FOOTER
 import app.learnmate.session.mentor.CONNECTION_LOST
@@ -418,6 +419,7 @@ fun MentorRoute(
     container: AppContainer,
     onBack: () -> Unit,
     onReadyForTest: () -> Unit,
+    mentorRepository: MentorRepository = container.mentorRepository,
 ) {
     val session by container.sessionRepository.current.collectAsState(initial = null)
     val current = session ?: return
@@ -427,7 +429,7 @@ fun MentorRoute(
             MentorController(
                 current.id,
                 current.stepIndex,
-                container.mentorRepository,
+                mentorRepository,
                 outsideAllowed = {
                     try {
                         container.familyRepository.get()?.outsideBooksAllowed ?: false
