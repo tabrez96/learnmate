@@ -10,6 +10,7 @@ __pycache__/
 *.egg-info/
 /server/data/
 /server/data/eval/real/
+/deploy/data/
 android/.gradle/
 android/build/
 android/app/build/
