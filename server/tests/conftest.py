@@ -42,6 +42,7 @@ def settings(tmp_path: Path) -> Settings:
         llm_provider="fake",
         embed_provider="fake",
         watchdog_enabled=False,
+        backup_enabled=False,
     )
 
 
