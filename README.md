@@ -168,6 +168,15 @@ npx prettier --write .   # format
 npx prettier --check .   # check
 ```
 
+### Deployment (`deploy/`)
+
+See `deploy/README.md`.
+
+```sh
+cp deploy/.env.example deploy/.env   # once, if missing
+docker compose -f deploy/compose.yaml config --quiet   # check
+```
+
 ### Secret scan (repo root)
 
 Install betterleaks 1.10.1 from its GitHub releases (the version CI pins in `.github/workflows/ci.yml`), then:
@@ -180,7 +189,7 @@ betterleaks git --redact --verbose .   # scan the full git history; fails on any
 
 ### CI
 
-GitHub Actions runs four jobs on every pull request: `server`, `android`, `prettier` and `secrets` (betterleaks over the full git history).
+GitHub Actions runs five jobs on every pull request: `server`, `android`, `prettier`, `deploy` (validates the Compose file) and `secrets` (betterleaks over the full git history).
 
 ---
 

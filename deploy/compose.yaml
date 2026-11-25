@@ -1,0 +1,23 @@
+name: learnmate
+
+services:
+  server:
+    build: ../server
+    restart: always
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      EMBED_CACHE_DIR: /data/models
+    volumes:
+      - ./data:/data
+    # No ports: the server is reached only through the tunnel.
+
+  cloudflared:
+    # Latest on purpose: Cloudflare stops supporting old releases; update with `docker compose pull cloudflared`.
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - server

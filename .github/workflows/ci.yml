@@ -47,6 +47,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prettier --check .
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp deploy/.env.example deploy/.env
+      - run: docker compose -f deploy/compose.yaml config --quiet
   secrets:
     runs-on: ubuntu-latest
     env:
