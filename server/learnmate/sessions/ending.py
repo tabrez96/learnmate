@@ -173,16 +173,21 @@ def check_pin(
 
 
 def end_session(
-    db: Session, settings: Settings, clock: Clock, session_id: int, pin: str
+    db: Session,
+    settings: Settings,
+    clock: Clock,
+    session_id: int,
+    pin: str,
+    at: dt.datetime | None = None,
 ) -> tuple[StudySession, Summary]:
     row = _session(db, session_id)
     _endable(row)
     family = _family(db)
     check_pin(db, settings, clock, row, pin)
+    now = clock.now()
+    ended_at = rules.offline_end_time(at, row.started_at or now, now)
     spec = _missed_test_spec(db, settings, clock, row)
-    summary = _finish(
-        db, settings, family, row, spec, ended_at=clock.now(), reason="pin"
-    )
+    summary = _finish(db, settings, family, row, spec, ended_at=ended_at, reason="pin")
     db.commit()
     return row, summary
 

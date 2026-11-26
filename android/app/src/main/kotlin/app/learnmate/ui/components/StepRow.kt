@@ -22,12 +22,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.learnmate.domain.StepState
 import app.learnmate.ui.theme.LearnmateShapes
 import app.learnmate.ui.theme.LearnmateTheme
 import app.learnmate.ui.theme.gradientGlow
 import app.learnmate.ui.theme.selectedHalo
-
-enum class StepState { Done, Current, Upcoming }
 
 internal val StepState.description: String
     get() =

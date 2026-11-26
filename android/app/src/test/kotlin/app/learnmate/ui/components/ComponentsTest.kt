@@ -31,6 +31,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import app.learnmate.domain.StepState
 import app.learnmate.ui.theme.LearnmateTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

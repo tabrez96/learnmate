@@ -140,6 +140,7 @@ def start_session(
 
 class EndIn(BaseModel):
     pin: str = Field(pattern=r"^\d{4,12}$")
+    at: dt.datetime | None = None  # when the end happened offline
 
 
 class ForceEndIn(BaseModel):
@@ -211,7 +212,7 @@ def end_session(
 ) -> EndOut:
     try:
         row, summary = ending.end_session(
-            db, settings, request.app.state.clock, session_id, body.pin
+            db, settings, request.app.state.clock, session_id, body.pin, body.at
         )
     except ending.EndError as e:
         _raise(e)

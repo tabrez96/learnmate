@@ -67,6 +67,7 @@ import app.learnmate.AppContainer
 import app.learnmate.data.api.ApiError
 import app.learnmate.data.mentor.MentorRepository
 import app.learnmate.data.settings.Appearance
+import app.learnmate.domain.StepState
 import app.learnmate.session.mentor.BOOKS_ONLY_FOOTER
 import app.learnmate.session.mentor.CONNECTION_LOST
 import app.learnmate.session.mentor.ChatItem
@@ -88,7 +89,6 @@ import app.learnmate.ui.components.SecondaryButton
 import app.learnmate.ui.components.SessionPill
 import app.learnmate.ui.components.SplitSendButton
 import app.learnmate.ui.components.StepRow
-import app.learnmate.ui.components.StepState
 import app.learnmate.ui.components.ThemeSwitch
 import app.learnmate.ui.theme.LearnmateShapes
 import app.learnmate.ui.theme.LearnmateSpacing

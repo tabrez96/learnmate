@@ -12,13 +12,19 @@ import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import app.learnmate.data.api.ApiError
+import app.learnmate.data.api.EndRequestDto
 import app.learnmate.data.api.EventRequestDto
+import app.learnmate.data.api.ForceEndRequestDto
 import app.learnmate.data.api.LearnmateApi
 import app.learnmate.data.api.apiCall
 import app.learnmate.data.db.OutboxDao
 import java.util.concurrent.TimeUnit
 
 const val OUTBOX_WORK_NAME = "event-outbox"
+
+/** Outbox row types for an end queued while the server was unreachable; the others are presence events. */
+const val END_PIN = "end_pin"
+const val END_FALLBACK = "end_fallback"
 
 class OutboxSender(
     private val api: LearnmateApi,
@@ -31,7 +37,11 @@ class OutboxSender(
             if (batch.isEmpty()) return true
             for (e in batch) {
                 try {
-                    apiCall { api.postEvent(e.sessionId, EventRequestDto(e.type, e.at, null)) }
+                    when (e.type) {
+                        END_PIN -> apiCall { api.endSession(e.sessionId, EndRequestDto(checkNotNull(e.secret), e.at)) }
+                        END_FALLBACK -> apiCall { api.forceEnd(e.sessionId, ForceEndRequestDto(checkNotNull(e.secret), e.at)) }
+                        else -> apiCall { api.postEvent(e.sessionId, EventRequestDto(e.type, e.at, null)) }
+                    }
                     dao.delete(e.id)
                 } catch (err: ApiError) {
                     if (!err.isRetryable()) {
@@ -49,7 +59,7 @@ class OutboxSender(
 
     private fun ApiError.isRetryable() =
         when (this) {
-            is ApiError.Network, ApiError.Unauthorized, is ApiError.TooSoon -> true
+            is ApiError.Network, ApiError.Unauthorized, is ApiError.TooSoon, is ApiError.PinLocked -> true
             is ApiError.Server -> code >= 500
             else -> false
         }

@@ -16,6 +16,11 @@ import app.learnmate.ui.theme.LearnmateTheme
 import kotlinx.coroutines.flow.first
 
 class MainActivity : ComponentActivity() {
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        (application as LearnmateApplication).container.userActivity.tryEmit(Unit)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val container = (application as LearnmateApplication).container

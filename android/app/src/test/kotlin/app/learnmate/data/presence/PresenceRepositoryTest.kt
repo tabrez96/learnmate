@@ -49,6 +49,17 @@ class PresenceRepositoryTest {
         }
 
     @Test
+    fun `flushIfPending schedules only when rows exist`() =
+        runBlocking {
+            repo.flushIfPending()
+            assertEquals(0, scheduled)
+            repo.record(7, PresenceEvent.LEFT)
+            scheduled = 0
+            repo.flushIfPending()
+            assertEquals(1, scheduled)
+        }
+
+    @Test
     fun `flushPending schedules delivery`() {
         repo.flushPending()
         assertEquals(1, scheduled)

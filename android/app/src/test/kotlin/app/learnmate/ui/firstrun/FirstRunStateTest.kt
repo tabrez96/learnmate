@@ -1,6 +1,6 @@
 package app.learnmate.ui.firstrun
 
-import app.learnmate.ui.components.StepState
+import app.learnmate.domain.StepState
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull

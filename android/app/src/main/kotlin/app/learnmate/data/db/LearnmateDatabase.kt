@@ -44,6 +44,8 @@ data class OutboxEventEntity(
     /** ISO instant when it happened. */
     val at: String,
     val attempts: Int = 0,
+    /** The PIN or fallback password for an end queued offline; deleted once delivered. */
+    val secret: String? = null,
 )
 
 @Dao
@@ -120,8 +122,8 @@ interface OutboxDao {
 
 @Database(
     entities = [CurrentSessionEntity::class, OutboxEventEntity::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
     exportSchema = true,
 )
 abstract class LearnmateDatabase : RoomDatabase() {
