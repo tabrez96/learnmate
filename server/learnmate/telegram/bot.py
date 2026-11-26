@@ -75,7 +75,10 @@ class TelegramRunner:
     async def _on_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         code = context.args[0] if context.args else ""
         with self._session_factory() as db:
-            ok = link_chat(db, code, update.effective_chat.id)
+            user = update.effective_user
+            ok = link_chat(
+                db, code, update.effective_chat.id, user.username if user else None
+            )
         await update.effective_message.reply_text(LINKED if ok else LINK_REFUSED)
 
     async def _on_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

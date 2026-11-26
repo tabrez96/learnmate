@@ -86,7 +86,7 @@ fun StepRow(
 }
 
 @Composable
-private fun StepDot(
+fun StepDot(
     number: Int,
     state: StepState,
 ) {

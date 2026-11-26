@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object SessionGraph
 
 // Parent graph
+@Serializable data object FirstRun
+
 @Serializable data object ParentHome
 
 @Serializable data object TodaysMaterial

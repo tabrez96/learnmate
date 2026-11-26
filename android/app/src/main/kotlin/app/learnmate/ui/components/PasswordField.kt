@@ -6,6 +6,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,7 @@ fun PasswordField(
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     supporting: String? = null,
+    enabled: Boolean = true,
 ) {
     val colors = LearnmateTheme.colors
     var visible by rememberSaveable { mutableStateOf(false) }
@@ -38,6 +40,7 @@ fun PasswordField(
         modifier.fillMaxWidth(),
         label = { Text(label) },
         singleLine = true,
+        enabled = enabled,
         isError = isError,
         shape = LearnmateShapes.input,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -49,17 +52,22 @@ fun PasswordField(
             ) { Text(if (visible) "Hide" else "Show", color = colors.blueText) }
         },
         supportingText = supporting?.let { { Text(it) } },
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colors.blue,
-                unfocusedBorderColor = colors.line,
-                focusedContainerColor = colors.card,
-                unfocusedContainerColor = colors.card,
-                errorBorderColor = colors.red,
-                focusedTextColor = colors.ink,
-                unfocusedTextColor = colors.ink,
-                focusedLabelColor = colors.blue,
-                unfocusedLabelColor = colors.inkSoft,
-            ),
+        colors = learnmateFieldColors(),
+    )
+}
+
+@Composable
+fun learnmateFieldColors(): TextFieldColors {
+    val colors = LearnmateTheme.colors
+    return OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = colors.blue,
+        unfocusedBorderColor = colors.line,
+        focusedContainerColor = colors.card,
+        unfocusedContainerColor = colors.card,
+        errorBorderColor = colors.red,
+        focusedTextColor = colors.ink,
+        unfocusedTextColor = colors.ink,
+        focusedLabelColor = colors.blue,
+        unfocusedLabelColor = colors.inkSoft,
     )
 }

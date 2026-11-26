@@ -81,3 +81,25 @@ def test_new_pin_bad_data_unavailable(db: Session):
     for data in ("new_pin:abc", "new_pin:", "other:1", "new_pin:-1"):
         assert handle_new_pin(db, hooks, 42, data) == NEW_PIN_UNAVAILABLE
     assert calls == []
+
+
+def test_start_stores_username(db: Session):
+    family = _family(db)
+    assert link_chat(db, "abc123", 42, "omars_parent") is True
+    assert family.telegram_handle == "omars_parent"
+
+
+def test_start_without_username_clears_handle(db: Session):
+    family = _family(db)
+    family.telegram_handle = "old_handle"
+    db.commit()
+    assert link_chat(db, "abc123", 42, None) is True
+    assert family.telegram_handle is None
+
+
+def test_refused_link_keeps_handle(db: Session):
+    family = _family(db)
+    family.telegram_handle = "old_handle"
+    db.commit()
+    assert link_chat(db, "wrong", 42, "someone_else") is False
+    assert family.telegram_handle == "old_handle"

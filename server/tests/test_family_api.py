@@ -140,3 +140,18 @@ def test_telegram_code_is_stored_and_replaced(client: TestClient, app: FastAPI) 
 
 def test_telegram_code_before_setup_is_409(client: TestClient) -> None:
     assert client.post("/api/v1/family/telegram-code").status_code == 409
+
+
+def test_get_family_returns_telegram_handle(client: TestClient, app: FastAPI) -> None:
+    client.put("/api/v1/family", json=SETUP)
+    before = client.get("/api/v1/family").json()
+    assert before["telegram_connected"] is False
+    assert before["telegram_handle"] is None
+    with app.state.session_factory() as db:
+        family = db.get(Family, 1)
+        family.telegram_chat_id = 42
+        family.telegram_handle = "omars_parent"
+        db.commit()
+    after = client.get("/api/v1/family").json()
+    assert after["telegram_connected"] is True
+    assert after["telegram_handle"] == "omars_parent"

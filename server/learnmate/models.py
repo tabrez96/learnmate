@@ -100,6 +100,7 @@ class Family(Base):
     grade: Mapped[int]
     telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger)
     telegram_link_code: Mapped[str | None] = mapped_column(String(32))
+    telegram_handle: Mapped[str | None] = mapped_column(String(64))
     fallback_hash: Mapped[str | None] = mapped_column(String(255))
     fallback_wrong: Mapped[int] = mapped_column(server_default="0")
     fallback_locked_until: Mapped[dt.datetime | None] = mapped_column(DateTime)

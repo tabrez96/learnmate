@@ -33,6 +33,7 @@ class FamilyOut(BaseModel):
     inactivity_warn_s: int
     inactivity_lock_s: int
     telegram_connected: bool
+    telegram_handle: str | None
     fallback_set: bool
 
 
@@ -64,6 +65,9 @@ def _to_out(family: Family) -> FamilyOut:
         inactivity_warn_s=family.inactivity_warn_s,
         inactivity_lock_s=family.inactivity_lock_s,
         telegram_connected=family.telegram_chat_id is not None,
+        telegram_handle=(
+            family.telegram_handle if family.telegram_chat_id is not None else None
+        ),
         fallback_set=family.fallback_hash is not None,
     )
 
