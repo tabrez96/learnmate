@@ -157,6 +157,8 @@ fun endDto(state: String = "ended") = EndDto(sessionDto(state = state), SummaryD
 class FakeLearnmateApi : LearnmateApi {
     val calls = mutableListOf<String>()
     val events = mutableListOf<Pair<Long, EventRequestDto>>()
+    val endBodies = mutableListOf<Pair<Long, EndRequestDto>>()
+    val forceEndBodies = mutableListOf<Pair<Long, ForceEndRequestDto>>()
     val failures = mutableMapOf<String, Throwable>()
 
     var session: SessionDto = sessionDto()
@@ -218,6 +220,7 @@ class FakeLearnmateApi : LearnmateApi {
         body: EndRequestDto,
     ): EndDto {
         hit("endSession")
+        endBodies += id to body
         return endDto()
     }
 
@@ -231,6 +234,7 @@ class FakeLearnmateApi : LearnmateApi {
         body: ForceEndRequestDto,
     ): EndDto {
         hit("forceEnd")
+        forceEndBodies += id to body
         return endDto()
     }
 

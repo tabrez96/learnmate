@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
+import app.learnmate.domain.StepState
 import app.learnmate.ui.theme.LearnmateShapes
 import app.learnmate.ui.theme.LearnmateTheme
 import app.learnmate.ui.theme.pageBackground

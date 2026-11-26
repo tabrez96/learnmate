@@ -82,6 +82,33 @@ def test_end_with_pin_ends_and_sends_summary(client: TestClient, app: FastAPI) -
     assert "Studied 25 min" in _texts(app)[-1]
 
 
+def test_end_with_pin_uses_offline_at(client: TestClient, app: FastAPI) -> None:
+    created, clock = _started(client, app)
+    clock.advance(seconds=30 * 60)
+    at = T0 + dt.timedelta(minutes=10)
+    response = client.post(
+        f"{API}/sessions/{created['id']}/end",
+        json={"pin": created["pin"], "at": at.isoformat()},
+    )
+    assert response.status_code == 200
+    assert response.json()["summary"]["studied_min"] == 10
+    assert _row(app, created["id"]).ended_at == at
+
+
+def test_end_with_pin_at_in_future_is_clamped_to_now(
+    client: TestClient, app: FastAPI
+) -> None:
+    created, clock = _started(client, app)
+    clock.advance(seconds=30 * 60)
+    future = T0 + dt.timedelta(hours=5)
+    response = client.post(
+        f"{API}/sessions/{created['id']}/end",
+        json={"pin": created["pin"], "at": future.isoformat()},
+    )
+    assert response.status_code == 200
+    assert _row(app, created["id"]).ended_at == T0 + dt.timedelta(minutes=30)
+
+
 def test_wrong_pins_count_and_fallback_after_three(
     client: TestClient, app: FastAPI
 ) -> None:

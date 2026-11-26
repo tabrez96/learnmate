@@ -3,7 +3,9 @@ package app.learnmate.data.presence
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import app.learnmate.data.api.EndRequestDto
 import app.learnmate.data.api.FakeLearnmateApi
+import app.learnmate.data.api.ForceEndRequestDto
 import app.learnmate.data.api.httpError
 import app.learnmate.data.db.LearnmateDatabase
 import app.learnmate.data.db.OutboxEventEntity
@@ -92,6 +94,62 @@ class OutboxSenderTest {
             assertEquals(0, db.outboxDao().count())
             assertEquals(listOf("back"), api.events.map { it.second.type })
             assertEquals("left", first.type)
+        }
+
+    private suspend fun queueEnd(type: String) =
+        db.outboxDao().insert(OutboxEventEntity(sessionId = 7, type = type, at = "t9", secret = "4821"))
+
+    @Test
+    fun `end_pin row calls endSession with pin and at then deletes`() =
+        runBlocking {
+            queueEnd(END_PIN)
+            assertTrue(sender.sendAll())
+            assertEquals(listOf(7L to EndRequestDto("4821", "t9")), api.endBodies)
+            assertEquals(0, db.outboxDao().count())
+        }
+
+    @Test
+    fun `end_fallback row calls forceEnd`() =
+        runBlocking {
+            queueEnd(END_FALLBACK)
+            assertTrue(sender.sendAll())
+            assertEquals(listOf(7L to ForceEndRequestDto("4821", "t9")), api.forceEndBodies)
+            assertEquals(0, db.outboxDao().count())
+        }
+
+    @Test
+    fun `end after left keeps order`() =
+        runBlocking {
+            queue("left")
+            queueEnd(END_PIN)
+            assertTrue(sender.sendAll())
+            assertEquals(listOf("postEvent", "endSession"), api.calls)
+        }
+
+    @Test
+    fun `423 on end keeps the row for retry`() =
+        runBlocking {
+            queueEnd(END_PIN)
+            api.failures["endSession"] = httpError(423, """{"detail":{"message":"locked"}}""", mapOf("Retry-After" to "60"))
+            assertFalse(sender.sendAll())
+            assertEquals(1, db.outboxDao().count())
+            assertEquals(
+                "4821",
+                db
+                    .outboxDao()
+                    .pending()
+                    .single()
+                    .secret,
+            )
+        }
+
+    @Test
+    fun `409 on end drops the row`() =
+        runBlocking {
+            queueEnd(END_PIN)
+            api.failures["endSession"] = httpError(409, """{"detail":"Session is not running"}""")
+            assertTrue(sender.sendAll())
+            assertEquals(0, db.outboxDao().count())
         }
 }
 

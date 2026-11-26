@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import app.learnmate.AppContainer
 import app.learnmate.data.settings.Appearance
+import app.learnmate.domain.StepState
 import app.learnmate.ui.components.AlertTone
 import app.learnmate.ui.components.GhostButton
 import app.learnmate.ui.components.LearnmateAlert
@@ -57,7 +58,6 @@ import app.learnmate.ui.components.PasswordField
 import app.learnmate.ui.components.PrimaryButton
 import app.learnmate.ui.components.SecondaryButton
 import app.learnmate.ui.components.StepDot
-import app.learnmate.ui.components.StepState
 import app.learnmate.ui.components.TelegramLine
 import app.learnmate.ui.components.ThemeSwitch
 import app.learnmate.ui.components.description

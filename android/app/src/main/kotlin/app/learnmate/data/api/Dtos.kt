@@ -74,6 +74,7 @@ data class SessionWithPinDto(
 @Serializable
 data class EndRequestDto(
     val pin: String,
+    val at: String? = null,
 )
 
 @Serializable

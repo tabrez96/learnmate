@@ -51,6 +51,11 @@ class PresenceRepository(
         return state
     }
 
+    /** Schedules delivery when rows are waiting, e.g. after the server answers a heartbeat. */
+    suspend fun flushIfPending() {
+        if (outboxDao.count() > 0) scheduler.schedule()
+    }
+
     /** Sends rows left behind by a killed process. */
     fun flushPending() = scheduler.schedule()
 }

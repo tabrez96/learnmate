@@ -59,7 +59,7 @@ def to_naive_utc(at: dt.datetime) -> dt.datetime:
 def offline_end_time(
     at: dt.datetime | None, started: dt.datetime, now: dt.datetime
 ) -> dt.datetime:
-    """The time a force-end happened: the client's time if given, else now.
+    """The time an end happened: the client's time if given, else now.
 
     The time is kept between the session start and now: a tablet clock that is a little
     behind or ahead must not leave the session stuck running.

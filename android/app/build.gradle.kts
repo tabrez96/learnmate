@@ -57,6 +57,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // MigrationTestHelper reads the exported Room schemas as assets; unit tests only see the debug ones.
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true

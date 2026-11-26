@@ -18,10 +18,13 @@ import app.learnmate.data.presence.LearnmateWorkerFactory
 import app.learnmate.data.presence.OutboxSender
 import app.learnmate.data.presence.PresenceRepository
 import app.learnmate.data.presence.WorkManagerOutboxScheduler
+import app.learnmate.data.session.OfflineEndRepository
 import app.learnmate.data.session.SessionRepository
 import app.learnmate.data.settings.AppearanceRepository
 import app.learnmate.data.settings.FallbackPasswordCache
 import app.learnmate.data.subjects.SubjectRepository
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -34,6 +37,9 @@ class AppContainer(
     val appearanceRepository = AppearanceRepository(appContext.settingsDataStore)
     val fallbackPasswordCache = FallbackPasswordCache(appContext.settingsDataStore)
 
+    /** A tick for every touch or key press; feeds the inactivity timer. */
+    val userActivity = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
     // Lazy so UI tests never open the database or touch WorkManager.
     val api by lazy { createLearnmateApi(BuildConfig.SERVER_URL, BuildConfig.DEVICE_TOKEN) }
     val database by lazy { LearnmateDatabase.build(appContext) }
@@ -43,6 +49,9 @@ class AppContainer(
     val sessionRepository by lazy { SessionRepository(api, database.sessionDao()) }
     val presenceRepository by lazy {
         PresenceRepository(api, database.outboxDao(), database.sessionDao(), outboxScheduler)
+    }
+    val offlineEndRepository by lazy {
+        OfflineEndRepository(database, fallbackPasswordCache, outboxScheduler)
     }
     val budgetRepository by lazy { BudgetRepository(api) }
     val familyRepository by lazy { FamilyRepository(api, fallbackPasswordCache) }

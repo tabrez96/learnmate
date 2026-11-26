@@ -1,6 +1,6 @@
 package app.learnmate.ui.firstrun
 
-import app.learnmate.ui.components.StepState
+import app.learnmate.domain.StepState
 
 const val MIN_PASSWORD = 8
 const val MAX_PASSWORD = 128 // server limit
