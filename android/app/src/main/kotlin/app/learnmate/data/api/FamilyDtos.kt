@@ -12,6 +12,7 @@ data class FamilyDto(
     @SerialName("inactivity_lock_s") val inactivityLockS: Int,
     @SerialName("telegram_connected") val telegramConnected: Boolean,
     @SerialName("fallback_set") val fallbackSet: Boolean,
+    @SerialName("telegram_handle") val telegramHandle: String? = null,
 )
 
 @Serializable

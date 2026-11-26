@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import app.learnmate.ui.navigation.EndSession
+import app.learnmate.ui.navigation.FirstRun
 import app.learnmate.ui.navigation.HandOver
 import app.learnmate.ui.navigation.Mentor
 import app.learnmate.ui.navigation.ParentGraph
@@ -33,11 +34,18 @@ fun LearnmateApp(
     startGraph: StartGraph,
     // Keyed by startGraph so a saved back stack only restores under the start graph it was saved with.
     navController: NavHostController = key(startGraph) { rememberNavController() },
+    firstRun: @Composable (onDone: () -> Unit, onSettings: () -> Unit) -> Unit = { _, _ -> PlaceholderScreen("S01", "First run") },
     mentor: @Composable (onBack: () -> Unit, onReadyForTest: () -> Unit) -> Unit = { _, _ -> PlaceholderScreen("S05", "Mentor") },
 ) {
     Surface(modifier = Modifier.fillMaxSize(), color = LearnmateTheme.colors.paper) {
         NavHost(navController, startDestination = if (startGraph == StartGraph.Session) SessionGraph else ParentGraph) {
-            navigation<ParentGraph>(startDestination = ParentHome) {
+            navigation<ParentGraph>(startDestination = if (startGraph == StartGraph.FirstRun) FirstRun else ParentHome) {
+                composable<FirstRun> {
+                    firstRun(
+                        { navController.navigate(ParentHome) { popUpTo<FirstRun> { inclusive = true } } },
+                        { navController.navigate(Settings) },
+                    )
+                }
                 composable<ParentHome> { PlaceholderScreen("S01", "Parent home") }
                 composable<TodaysMaterial> { PlaceholderScreen("S02", "Today's material") }
                 composable<HandOver> { PlaceholderScreen("S03", "Hand over") }

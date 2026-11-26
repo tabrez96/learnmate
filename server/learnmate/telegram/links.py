@@ -23,13 +23,16 @@ class TelegramHooks:
     new_pin: NewPinHandler | None = None
 
 
-def link_chat(db: Session, code: str, chat_id: int) -> bool:
+def link_chat(
+    db: Session, code: str, chat_id: int, username: str | None = None
+) -> bool:
     family = db.get(Family, FAMILY_ID)
     if family is None or not family.telegram_link_code or not code:
         return False
     if not secrets.compare_digest(code.encode(), family.telegram_link_code.encode()):
         return False
     family.telegram_chat_id = chat_id
+    family.telegram_handle = username or None
     family.telegram_link_code = None
     db.commit()
     return True

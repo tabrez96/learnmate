@@ -5,10 +5,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import app.learnmate.ui.components.GhostButton
 import app.learnmate.ui.navigation.EndSession
+import app.learnmate.ui.navigation.FirstRun
 import app.learnmate.ui.navigation.HandOver
 import app.learnmate.ui.navigation.Mentor
 import app.learnmate.ui.navigation.ParentGraph
@@ -24,6 +27,7 @@ import app.learnmate.ui.navigation.TodaysMaterial
 import app.learnmate.ui.theme.LearnmateTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -51,6 +55,27 @@ class LearnmateAppTest {
     fun opensParentGraphWithoutSession() {
         launch(StartGraph.Parent)
         compose.onNodeWithText("S01 Parent home").assertIsDisplayed()
+    }
+
+    @org.junit.Test
+    fun opensFirstRunWhenSetupIncomplete() {
+        launch(StartGraph.FirstRun)
+        compose.onNodeWithText("S01 First run").assertIsDisplayed()
+    }
+
+    @org.junit.Test
+    fun firstRunDoneOpensParentHome() {
+        compose.setContent {
+            nav = rememberNavController()
+            LearnmateTheme {
+                LearnmateApp(StartGraph.FirstRun, nav, firstRun = { done, _ -> GhostButton("Finish", done) })
+            }
+        }
+        compose.onNodeWithText("Finish").performClick()
+        compose.onNodeWithText("S01 Parent home").assertIsDisplayed()
+        pressBack()
+        compose.onNodeWithText("S01 First run").assertDoesNotExist()
+        assertTrue(compose.activity.isFinishing)
     }
 
     @org.junit.Test
@@ -112,7 +137,7 @@ class LearnmateAppTest {
             session.map { it.route }.toSet(),
         )
         assertEquals(
-            setOf(ParentHome, TodaysMaterial, HandOver, Settings).map { it::class.qualifiedName }.toSet(),
+            setOf(FirstRun, ParentHome, TodaysMaterial, HandOver, Settings).map { it::class.qualifiedName }.toSet(),
             parent.map { it.route }.toSet(),
         )
     }
